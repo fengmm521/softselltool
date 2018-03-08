@@ -443,7 +443,7 @@ if __name__ == '__main__':
     server = ThreadedHTTPServer(serverAddr, myHandler)
     print 'https server is running....'
     print 'Starting server, use <Ctrl-C> to stop'
-    server.socket = ssl.wrap_socket (server.socket, certfile=curdir + '/server.pem', server_side=True)
+    server.socket = ssl.wrap_socket (server.socket, certfile=curdir + '/keys/server.pem', server_side=True)
     # server.socket.settimeout(2)
     # # print server.socket.getsockopt(socket.SOL_S0CKET,socket.SO_RCVTIMEO)
     # print socket.SOL_SOCKET
