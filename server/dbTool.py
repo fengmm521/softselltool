@@ -6,46 +6,55 @@ import dbm
 
 dbpth = './db/keysdb'
 
-def inset(key,value):
-    db = dbm.open(dbpth, 'c')
-    db[key] = value
-    db.close()
+class DBMObj(object):
+    """docstring for ClassName"""
+    def __init__(self, pth):
+        self.dbpth = pth
 
-def delet(key):
-    db = dbm.open(dbpth, 'c')
-    if db.has_key(key):
-        del db[key]
-    db.close()
+    def inset(self,key,value):
+        db = dbm.open(self.dbpth, 'c')
+        db[key] = value
+        db.close()
 
-def update(key,value):
-    db = dbm.open(dbpth, 'c')
-    db[key] = value
-    db.close()
+    def delet(self,key):
+        db = dbm.open(self.dbpth, 'c')
+        if key in db:
+            del db[key]
+        db.close()
 
-def select(key):
-    db = dbm.open(dbpth, 'c')
-    if db.has_key(key):
-        return db[key]
-    else:
-        return None
-    db.close()
+    def update(self,key,value):
+        db = dbm.open(self.dbpth, 'c')
+        db[key] = value
+        db.close()
 
-def allKeys():
-    db = dbm.open(dbpth, 'c')
-    return db.keys() 
-    db.close()
+    def select(self,key):
+        db = dbm.open(self.dbpth, 'c')
+        if key in db:
+            return db[key]
+        else:
+            return None
+        db.close()
+
+    def allKeys(self):
+        db = dbm.open(self.dbpth, 'c')
+        return db.keys() 
+        db.close()
 
 def main():
-    print allKeys()
-    inset('mykey2', '111')
-    print select('mykey')
-    delet('mykey')
-    print select('mykey')
-    print select('mykey2')
-    update('mykey2', 'dddx')
-    print select('mykey2')
+    import os
+    if not os.path.exists('db'):
+        os.mkdir('db')
+    tobj = DBMObj(dbpth)
+    print(tobj.allKeys())
+    tobj.inset('mykey2', '111')
+    print(tobj.select('mykey'))
+    tobj.delet('mykey')
+    print(tobj.select('mykey'))
+    print(tobj.select('mykey2'))
+    tobj.update('mykey2', 'dddx')
+    print(tobj.select('mykey2'))
     # delet('mykey2')
-    print allKeys()
+    print(tobj.allKeys())
 
 if __name__=="__main__":  
     main()

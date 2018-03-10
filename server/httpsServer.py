@@ -9,7 +9,6 @@ import ssl
 from BaseHTTPServer import HTTPServer, BaseHTTPRequestHandler
 from SocketServer import ThreadingMixIn
 import threading
-import logging
 import cgi
 import time
 import posixpath
@@ -19,11 +18,17 @@ import shutil
 import mimetypes
 import json
 
-import struct
-
 import hashlib
 
-import WXMsgTool
+import zlib
+
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
+
+nowPth = os.path.split(os.getcwd())[1]
+curdir = '.'
 
 import socket
 hostname = socket.gethostname()
@@ -34,210 +39,81 @@ setLastIP = selfip
 print 'selfIP:',selfip
 print 'setLastIP:',setLastIP
 
-#子线程下的函数调用超时工具,此工具比较消耗时间性能，但在这里可以用
-from kthreadTimeoutTool import timeoutTool
-
-#调用函数超时:http://blog.csdn.net/jinnian_lin/article/details/19918703
-import signal  
-class TimeOutException(Exception):  
-    pass  
-  
-def setTimeout(num, callback):  
-    def wrape(func):  
-        def handle(signum, frame):  
-            raise TimeOutException("运行超时！")  
-        def toDo(*args, **kwargs):  
-            try:  
-                signal.signal(signal.SIGALRM, handle)  
-                signal.alarm(num)#开启闹钟信号  
-                rs = func(*args, **kwargs)  
-                signal.alarm(0)#关闭闹钟信号  
-                return rs  
-            except TimeOutException, e:  
-                callback()  
-              
-        return toDo  
-    return wrape 
-
-
-
-wxtool = WXMsgTool.WXMsgTool()
-
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
-
-nowPth = os.path.split(os.getcwd())[1]
-curdir = '.'
-if nowPth == 'btcchttp':
-    curdir = 'httpserver'
-
-
-#okcoin合约价格预警签名相关
-md5frontstr = "woodcol~!@09"
-md5endStr = "okcointrade&^%12"
-
+#sell1.woodcol.com
 
 class myHandler(BaseHTTPRequestHandler):
-
-    #校验消息真实性
-    def verifyEsp8266Msg(self,reqdict):
-        timestr = reqdict['time']
-        tmpstr = ''
-        if reqdict.has_key('lastprice'):
-            lastprice = reqdict['lastprice']
-            tmpstr = md5frontstr + timestr + lastprice + md5endStr
-        else:
-            tmpstr = md5frontstr + timestr + md5endStr
-        sha1str = hashlib.md5(tmpstr).hexdigest()
-        print sha1str,timestr
-        if sha1str == reqdict['signature']:
-            return True
-        else:
-            return False
-
     def do_GET(self):  
-    	# print self.path
-        # print self.client_address
-        # print self.client_address
-        if self.client_address[0] == selfip and self.path[0:3] != '/ok':
-
-            print 'address is self'
-            backstr = 'get self ask'
-            length = len(backstr)
-            self.send_response(200)
-            self.send_header("Content-type", 'application/json; encoding=utf-8')
-            self.send_header("Content-Length", str(length))
-            self.end_headers()
-            self.wfile.write(backstr)
-            return None
-
-        #保存当成交价信息
-        if self.client_address[0] == '114.215.203.152' and self.path[0:8] == '/setlast':
-            datastrs = self.path.split('?')
-            if len(datastrs) > 1:
-                requestr = datastrs[1]
-                coms = requestr.split('&')
-                reqdata = {}
-                for c in coms:
-                    tmps = c.split('=')
-                    reqdata[tmps[0]] = tmps[1]
-                if reqdata.has_key('last'):
-                    wxtool.setLastPriceFromOKEX(float(reqdata['last']))
-            self.sendEmptyMsg()
-            return None
-
-        if self.client_address[0].find('shadowserver') != -1:
-            # self.connection.close()
-            return None
+    	print('clientIP-->',self.client_address[0])
+        print('clienturl-->',self.path)
 
         if self.path=="/":  
             self.path="/index.html"  
-        
         try:  
             #根据请求的文件扩展名，设置正确的mime类型  
-            sendReply = False  
+            if self.path.endswith(".html"):  
+                mimetype='text/html'  
+                f = open(curdir + os.sep + self.path, 'rb')  
+                self.send_response(200)  
+                self.send_header('Content-type',mimetype)  
+                self.end_headers()  
+
+                self.wfile.write(f.read())  
+                f.close()  
+                return
             
-            if self.path[0:3] == "/wx":
-                sendReply = False
-                datastrs = self.path.split('?')
-                if len(datastrs) > 1:
-                    requestr = datastrs[1]
-                    coms = requestr.split('&')
-                    reqdata = {}
-                    for c in coms:
-                        tmps = c.split('=')
-                        reqdata[tmps[0]] = tmps[1]
-                    # print reqdata
-                # sendstr = json.dumps(tokenback)
-                    if 'echostr' in reqdata.keys():
-                        sendstr = reqdata['echostr']
-                        length = len(sendstr)
-                        self.send_response(200)
-                        self.send_header("Content-type", 'application/json; encoding=utf-8')
-                        self.send_header("Content-Length", str(length))
-                        self.end_headers()
-                        self.wfile.write(sendstr)
-                    else:
-                        return reqdata
-            elif self.path[0:3] == "/ok": #okcoin合约价格预警
-            #https://btc.woodcol.com/ok?time=1234567&signature=abcdef12345678
-                datastrs = self.path.split('?')
-                if len(datastrs) > 1:
-                    requestr = datastrs[1]
-                    coms = requestr.split('&')
-                    reqdata = {}
-                    for c in coms:
-                        tmps = c.split('=')
-                        reqdata[tmps[0]] = tmps[1]
-                    if 'time' in reqdata.keys() and 'signature' in reqdata.keys():
-                        if self.verifyEsp8266Msg(reqdata):
-                            wxtool.limtLastTime = time.time()
-                            if reqdata.has_key('lastprice'):
-                                wxtool.okLastPrice = float(reqdata['lastprice'])
-                            sendstr = "{\"minlimt\":%.2f,\"maxlimt\":%.2f,\"market\":%d,\"erro\":0}"%(wxtool.minlimt,wxtool.maxlimt,wxtool.market)
-                            if wxtool.market == 2:
-                                isBeep = 0
-                                if wxtool.bitmexHttpLastPrice <= wxtool.minlimt:
-                                    isBeep = -1
-                                elif wxtool.bitmexHttpLastPrice >= wxtool.maxlimt:
-                                    isBeep = 1
-                                else:
-                                    isBeep = 0
-                                sendstr = "{\"minlimt\":%.2f,\"maxlimt\":%.2f,\"market\":%d,\"lastprice\":%.2f,\"isBeep\":%d,\"erro\":0}"%(wxtool.minlimt,wxtool.maxlimt,wxtool.market,wxtool.bitmexHttpLastPrice,isBeep)
-                            # print sendstr
-                            length = len(sendstr)
-                            self.send_response(200)
-                            self.send_header("Content-type", 'application/json; encoding=utf-8')
-                            self.send_header("Content-Length", str(length))
-                            self.end_headers()
-                            self.wfile.write(sendstr)
-                        else:
-                            sendstr = '{\"erro\":1}'
-                            # print sendstr
-                            length = len(sendstr)
-                            self.send_response(200)
-                            self.send_header("Content-type", 'application/json; encoding=utf-8')
-                            self.send_header("Content-Length", str(length))
-                            self.end_headers()
-                            self.wfile.write(sendstr)
+            if self.client_address[0] == '':
+                print self.client_address[0]
+
+            if self.path[0:5] == 'trail':    #1.client试用登陆
+                print('trail---->',self.path)
+                self.sendEmptyMsg()
+            elif self.path[0:4] == 'bind':   #2.client绑定注册码和硬件码
+                print('bind---->',self.path)
+                self.sendEmptyMsg()
+            elif self.path[0:5] == 'check':  #3.client验证注册码和硬件码
+                print('check---->',self.path)
+                self.sendEmptyMsg()
+            elif self.path[0:7] == 'create': #1.易卡生成注册码
+                #https://www.xxxx.com/create?type=1
+                #https://www.xxxx.com/create?type=1&count=50
+                #返回:卡 密,卡 密,卡 密
+                #只有卡时返回:卡,卡,卡,卡
+                kas = ''
+                count = 0
+                for n in ragen(50):
+                    count += 1
+                    tmpstr = str(time.time()) + str(count)
+                    tmpka = 't' + str(count) + hashlib.md5(tmpstr).hexdigest()
+                    kas += tmpka + ','
+                kas = kas[:-1]
+                # self.sendMsg(kas)
+                self.sendEmptyMsg()
+            elif self.path[0:6] == 'selled': #2.1k出售成功
+                #异步通知地址:www.xxxx.com/selled
+                #POST一共会传递4个参数goods_id,trade_no,card_password,contact
+                #goods_id : 商品ID
+                #trade_no : 订单ID
+                #card_password : 卡密,多个卡密之间用|分割,卡和密用逗号,分割
+                #contact : 联系方式
+                print('selled---->',self.path)
+                self.sendEmptyMsg()
+            elif self.path[0:8] == 'mycreate':  #1.手动创建新的卡密
+                kas = ''
+                count = 0
+                for n in ragen(50):
+                    count += 1
+                    tmpstr = str(time.time()) + str(count)
+                    tmpka = 't' + str(count) + hashlib.md5(tmpstr).hexdigest()
+                    kas += tmpka + ','
+                kas = kas[:-1]
+                self.sendMsg(kas)
             else:
-                if self.path.endswith(".html"):  
-                    mimetype='text/html'  
-                    sendReply = True  
-                elif self.path.endswith(".jpg"):  
-                    mimetype='image/jpg'  
-                    sendReply = True  
-                elif self.path.endswith(".gif"):  
-                    mimetype='image/gif'  
-                    sendReply = True  
-                elif self.path.endswith(".js"):  
-                    mimetype='application/javascript'  
-                    sendReply = True  
-                elif self.path.endswith(".css"):  
-                    mimetype='text/css'  
-                    sendReply = True  
-                elif self.path.endswith(".swf"):  
-                    mimetype='application/x-shockwave-flash'  
-                    sendReply = True  
-                else:
-                    return None
-
-            if sendReply == True:  
-                    #读取相应的静态资源文件，并发送它  
-                    f = open(curdir + os.sep + self.path, 'rb')  
-                    self.send_response(200)  
-                    self.send_header('Content-type',mimetype)  
-                    self.end_headers()  
-
-                    self.wfile.write(f.read())  
-                    f.close()  
-            return None
+                time.sleep(3)
+                self.sendEmptyMsg()
+            return  
   
         except IOError:  
             self.send_error(404,'File Not Found: %s' % self.path)  
-            return None
   
     def sendEmptyMsg(self):
         self.send_response(200)
@@ -247,21 +123,9 @@ class myHandler(BaseHTTPRequestHandler):
         self.wfile.write('')
 
     def sendMsg(self,toUserName,fromUserName,msg):
-        # <xml>
-        # <ToUserName><![CDATA[toUser]]></ToUserName>
-        # <FromUserName><![CDATA[fromUser]]></FromUserName>
-        # <CreateTime>12345678</CreateTime>
-        # <MsgType><![CDATA[text]]></MsgType>
-        # <Content><![CDATA[你好]]></Content>
-        # </xml>
-        # print 'sendmsg------>'
-        sendmsg = u'<xml><ToUserName><![CDATA[%s]]></ToUserName><FromUserName><![CDATA[%s]]></FromUserName><CreateTime>%d</CreateTime><MsgType><![CDATA[text]]></MsgType><Content><![CDATA['%(toUserName,fromUserName,int(time.time())) + unicode(msg,'utf-8') + u']]></Content></xml>'
-        # sendmsg = unicode(sendmsg,'utf-8')
-        # print sendmsg
-        sendmsg = sendmsg.encode('UTF-8')
-        # sendmsg = asiic(sendmsg)
+        sendmsg = msg
         self.send_response(200)
-        self.send_header("Content-type", 'application/xml; encoding=utf-8')
+        self.send_header("Content-type", 'application/text; encoding=utf-8')
         self.send_header("Content-Length", str(len(sendmsg)))
         self.end_headers()
         self.wfile.write(sendmsg)
@@ -279,156 +143,237 @@ class myHandler(BaseHTTPRequestHandler):
             return True
         else:
             return False
+
+    def _compress(self,msg):
+        dat = zlib.compress(msg, zlib.Z_BEST_COMPRESSION)
+        print('ziplen-co-->',len(msg),len(dat))
+        return dat
+    def _decompress(self,dat):
+        msg = zlib.decompress(dat)
+        print('ziplen-de-->',len(dat),len(msg))
+        return msg
     def do_POST(self):
-        print 'get post'
 
         dictmp = self.do_GET()
+        length = self.headers.getheader('content-length');
+        nbytes = int(length)
+        data = self.rfile.read(nbytes)
 
-        isOK = False
-        if dictmp:
-            isOK = self.verifyMsg(dictmp)
+        data = self._decompress(data)
+            
+        print('postGetData---->',data)
 
-        if isOK:
-            length = self.headers.getheader('content-length');
-            nbytes = int(length)
-            data = self.rfile.read(nbytes)
-            wxtool.getWXMsg(data, self)
-        else:
-            print 'get post erro'
-            self.send_error(404,'File Not Found: %s' % self.path)     
-        # self.connection.close()
+        
 
-    # def _writeheaders(self):
-    #     print self.path
-    #     print self.headers
-    #     self.send_response(200);
-    #     self.send_header('Content-type','text/html');
-    #     self.end_headers()
     def do_HEAD(self):
-        print 'do_head'
-        # if self.client_address[0].find('shadowserver') != -1:
-        #     self.connection.close()
-        #     return
+        """Serve a HEAD request."""
+        print('do_HEAD')
+        f = self.send_head()
+        if f:
+            f.close()
 
+    def send_head(self):
+        """Common code for GET and HEAD commands.
 
+        This sends the response code and MIME headers.
+
+        Return value is either a file object (which has to be copied
+        to the outputfile by the caller unless the command was HEAD,
+        and must be closed by the caller under all circumstances), or
+        None, in which case the caller has nothing further to do.
+
+        """
+        path = self.translate_path(self.path)
+        f = None
+        if os.path.isdir(path):
+            if not self.path.endswith('/'):
+                # redirect browser - doing basically what apache does
+                self.send_response(301)
+                self.send_header("Location", self.path + "/")
+                self.end_headers()
+                return None
+            for index in "index.html", "index.htm":
+                index = os.path.join(path, index)
+                if os.path.exists(index):
+                    path = index
+                    break
+            else:
+                return self.list_directory(path)
+        ctype = self.guess_type(path)
+        try:
+            # Always read in binary mode. Opening files in text mode may cause
+            # newline translations, making the actual size of the content
+            # transmitted *less* than the content-length!
+            f = open(path, 'rb')
+        except IOError:
+            self.send_error(404, "File not found")
+            return None
+        self.send_response(200)
+        self.send_header("Content-type", ctype)
+        fs = os.fstat(f.fileno())
+        self.send_header("Content-Length", str(fs[6]))
+        self.send_header("Last-Modified", self.date_time_string(fs.st_mtime))
+        self.end_headers()
+        return f
+
+    def list_directory(self, path):
+        """Helper to produce a directory listing (absent index.html).
+
+        Return value is either a file object, or None (indicating an
+        error).  In either case, the headers are sent, making the
+        interface the same as for send_head().
+
+        """
+        try:
+            list = os.listdir(path)
+        except os.error:
+            self.send_error(404, "No permission to list directory")
+            return None
+        list.sort(key=lambda a: a.lower())
+        f = StringIO()
+        displaypath = cgi.escape(urllib.unquote(self.path))
+        f.write('<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">')
+        f.write("<html>\n<title>Directory listing for %s</title>\n" % displaypath)
+        f.write("<body>\n<h2>Directory listing for %s</h2>\n" % displaypath)
+        f.write('''<form action="" enctype="multipart/form-data" method="post">\n
+                    <input name="file" type="file" />
+                    <input value="upload" type="submit" />
+                </form>''')
+        f.write("<hr>\n<ul>\n")
+        for name in list:
+            if name.startswith('.'):
+                continue
+            fullname = os.path.join(path, name)
+            displayname = linkname = name
+            # Append / for directories or @ for symbolic links
+            if os.path.isdir(fullname):
+                displayname = name + "/"
+                linkname = name + "/"
+            if os.path.islink(fullname):
+                displayname = name + "@"
+                # Note: a link to a directory displays with @ and links with /
+            f.write('<li><a href="%s">%s</a>\n'
+                    % (urllib.quote(linkname), cgi.escape(displayname)))
+        f.write("</ul>\n<hr>\n</body>\n</html>\n")
+        length = f.tell()
+        f.seek(0)
+        self.send_response(200)
+        encoding = sys.getfilesystemencoding()
+        self.send_header("Content-type", "text/html; charset=%s" % encoding)
+        self.send_header("Content-Length", str(length))
+        self.end_headers()
+        return f
+
+    def translate_path(self, path):
+        """Translate a /-separated PATH to the local filename syntax.
+
+        Components that mean special things to the local file system
+        (e.g. drive or directory names) are ignored.  (XXX They should
+        probably be diagnosed.)
+
+        """
+        # abandon query parameters
+        path = path.split('?',1)[0]
+        path = path.split('#',1)[0]
+        path = posixpath.normpath(urllib.unquote(path))
+        words = path.split('/')
+        words = filter(None, words)
+        path = os.getcwd()
+        for word in words:
+            drive, word = os.path.splitdrive(word)
+            head, word = os.path.split(word)
+            if word in (os.curdir, os.pardir): continue
+            path = os.path.join(path, word)
+        return path
+
+    def copyfile(self, source, outputfile):
+        """Copy all data between two file objects.
+
+        The SOURCE argument is a file object open for reading
+        (or anything with a read() method) and the DESTINATION
+        argument is a file object open for writing (or
+        anything with a write() method).
+
+        The only reason for overriding this would be to change
+        the block size or perhaps to replace newlines by CRLF
+        -- note however that this the default server uses this
+        to copy binary data as well.
+
+        """
+        shutil.copyfileobj(source, outputfile)
+
+    def log_error(self, format, *args):
+        """Log an error.
+
+        Display error message in red color.
+        """
+
+        format = '\033[0;31m' + format + '\033[0m'
+        self.log_message(format, *args)
+
+    def guess_type(self, path):
+        """Guess the type of a file.
+
+        Argument is a PATH (a filename).
+
+        Return value is a string of the form type/subtype,
+        usable for a MIME Content-type header.
+
+        The default implementation looks the file's extension
+        up in the table self.extensions_map, using application/octet-stream
+        as a default; however it would be permissible (if
+        slow) to look inside the data to make a better guess.
+
+        """
+        base, ext = posixpath.splitext(path)
+        if ext in self.extensions_map:
+            return self.extensions_map[ext]
+        ext = ext.lower()
+        if ext in self.extensions_map:
+            return self.extensions_map[ext]
+        else:
+            return self.extensions_map['']
+
+    if not mimetypes.inited:
+        mimetypes.init() # try to read system mime.types
+    extensions_map = mimetypes.types_map.copy()
+    extensions_map.update({
+        '': 'application/octet-stream', # Default
+        '.py': 'text/plain',
+        '.c': 'text/plain',
+        '.h': 'text/plain',
+        })
 
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     """Handle requests in a separate thread."""
-    # daemon_threads = True
-    timeout = 2
-    # def handle_timeout(self):
-    #     try:
-    #         print 'timeout'
-    #     except socket.error:
-    #         print 'erro'
-    #         return
 
-    def get_request(self):
-        @timeoutTool(1)  #accept调用超时，会调用timeoutFunc函数
-        def timeoutGetAccept(obj):
-            try:
-                return obj.accept()
-            except Exception as e:
-                return None
-        tmp = timeoutGetAccept(self.socket)
-        if tmp:
-            return tmp
-        else:
-            return None,None
 
-    def _handle_request_noblock(self):
-        try:
-            request,client_address  = self.get_request()
-            if not (request and client_address):
-                return
-        except socket.error:
-            return
-        if self.verify_request(request, client_address):
-            try:
-                self.process_request(request, client_address)
-            except:
-                self.handle_error(request, client_address)
-                self.shutdown_request(request)
+f = open('./keys/server.conf','r')
+lines = f.readlines()
+f.close()
+tmpIp = lines[0].replace('\n','').replace('\r','')
+tmpPort = int(lines[1].replace('\n','').replace('\r',''))
 
-serverAddr = (selfip,4443)
+serverAddr = (selfip,tmpPort)
 
-if curdir == 'httpserver' or selfip[0:2] != '19':
-    serverAddr = ('114.215.203.152',443)
+if selfip[0:2] != '19':
+    serverAddr = (tmpIp,tmpPort)
 
-class HttpStartObj (threading.Thread):   #继承父类threading.Thread
-    def __init__(self):
-        threading.Thread.__init__(self)
-    def httpServerRestart(self):
-        try:
-            server = ThreadedHTTPServer(serverAddr, myHandler)
-            print 'https server is running....'
-            print 'Starting server, use <Ctrl-C> to stop'
-            server.socket = ssl.wrap_socket (server.socket, certfile=curdir + '/server.pem', server_side=True)
-            # server.serve_forever()
-            while True: 
-                server.handle_request()
-        except Exception as e:
-            print e
-            self.httpServerRestart()
-    def runHttpServer(self):
-        print serverAddr
-        try:
-            server = ThreadedHTTPServer(serverAddr, myHandler)
-            print 'https server is running....'
-            print 'Starting server, use <Ctrl-C> to stop'
-            server.socket = ssl.wrap_socket (server.socket, certfile=curdir + '/server.pem', server_side=True)
-            # server.serve_forever()
-            while True:  
-                server.handle_request()
-        except Exception as e:
-            print e
-            self.httpServerRestart()
-    def run(self):                   #把要执行的代码写到run函数里面 线程在创建后会直接运行run函数 
-        
-        self.runHttpServer()
+def runHttpServer(ptemp):
 
-def httpServerRestart():
-    try:
-        server = ThreadedHTTPServer(serverAddr, myHandler)
-        print 'https server is running....'
-        print 'Starting server, use <Ctrl-C> to stop'
-        server.socket = ssl.wrap_socket (server.socket, certfile=curdir + '/server.pem', server_side=True)
-        # server.serve_forever()
-        while True: 
-            server.handle_request()
-    except Exception as e:
-        print e
-        httpServerRestart()
-def runHttpServer(tmpp):
-    print serverAddr
-    try:
-        server = ThreadedHTTPServer(serverAddr, myHandler)
-        print 'https server is running....'
-        print 'Starting server, use <Ctrl-C> to stop'
-        server.socket = ssl.wrap_socket (server.socket, certfile=curdir + '/server.pem', server_side=True)
-        # server.serve_forever()
-        while True:  
-            server.handle_request()
-    except Exception as e:
-        print e
-        httpServerRestart()
+    server = ThreadedHTTPServer(serverAddr, myHandler)
+    print('https server is running....')
+    print('Starting server, use <Ctrl-C> to stop')
+    print(serverAddr)
     
-    
-def startServer(ltctool,btctool):
-
-    wxtool.setBTCTool(btctool)
-    wxtool.setLTCTool(ltctool)
+    server.socket = ssl.wrap_socket (server.socket, certfile='./keys/server.pem', server_side=True)
+    server.serve_forever()
+def startServer():
 
     thr = threading.Thread(target=runHttpServer,args=(None,))
     thr.setDaemon(True)
     thr.start()
-    # thread1 = HttpStartObj()
-    # thread1.setDaemon(True)
-    # thread1.start()
-
-    return wxtool
-
 
 
 if __name__ == '__main__':
@@ -437,31 +382,9 @@ if __name__ == '__main__':
     # print 'Starting server, use <Ctrl-C> to stop'
     # server.socket = ssl.wrap_socket (server.socket, certfile='server.pem', server_side=True)
     # server.serve_forever()
-    print serverAddr
-    wxtool.setBTCTool(None)
-    wxtool.setLTCTool(None)
-    server = ThreadedHTTPServer(serverAddr, myHandler)
-    print 'https server is running....'
-    print 'Starting server, use <Ctrl-C> to stop'
-    server.socket = ssl.wrap_socket (server.socket, certfile=curdir + '/keys/server.pem', server_side=True)
-    # server.socket.settimeout(2)
-    # # print server.socket.getsockopt(socket.SOL_S0CKET,socket.SO_RCVTIMEO)
-    # print socket.SOL_SOCKET
-    # print socket.SO_RCVTIMEO
-    # print server.socket.getsockopt(socket.SOL_SOCKET,socket.SO_RCVTIMEO)
-    # server.socket.setsockopt(socket.SOL_SOCKET,socket.SO_RCVTIMEO,struct.pack("LL", 2, 0))
-    # server.socket.setsockopt(socket.SOL_SOCKET,socket.SO_LINGER,struct.pack('ii', 0, 1))
-    # print server.socket.getsockopt(socket.SOL_SOCKET,socket.SO_RCVTIMEO)
-    while True:  
-        server.handle_request()
-        try:
-            pass
-        except KeyboardInterrupt:
-            print 'shutdown'
-            server.shutdown()
-        
-        
-    # server.serve_forever()
+    startServer()
+    while True:
+        time.sleep(10)
 
 
 # # 生成rsa密钥

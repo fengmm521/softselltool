@@ -7,177 +7,140 @@
 
 import os, sys
 import time
-import wmi,zlib
 
-#http://www.cnblogs.com/freeliver54/archive/2008/04/08/1142356.html
+import json
 
-#http://blog.csdn.net/xtx1990/article/details/7288903 
+import requests
+import zlib
 
-def get_cpu_info() :
-    tmpdict = {}
-    tmpdict["CpuCores"] = 0
-    c = wmi.WMI()
-#   print c.Win32_Processor().['ProcessorId']
-#   print c.Win32_DiskDrive()
-    for cpu in c.Win32_Processor():     
-        # print cpu
-        tmpdict["cpuid"] = cpu.ProcessorId.strip()
-        tmpdict["CpuType"] = cpu.Name
-        try:
-            tmpdict["CpuCores"] = cpu.NumberOfCores
-        except:
-            tmpdict["CpuCores"] += 1
-            tmpdict["CpuClock"] = cpu.MaxClockSpeed 
-    return tmpdict
-def get_disk_info():
-    tmplist = []
-    encrypt_str = ""
-    c = wmi.WMI ()
-    for cpu in c.Win32_Processor():
+testHost = 'https://192.168.123.200:4443/'
+Host = 'https://sell1.woodcol.com:4443/'
 
-#cpu 序列号
-        encrypt_str = encrypt_str+cpu.ProcessorId.strip()
-        print "cpu id:", cpu.ProcessorId.strip()
-    for physical_disk in c.Win32_DiskDrive():
-        encrypt_str = encrypt_str+physical_disk.SerialNumber.strip()
+#压缩
+def _compress(msg):
+    dat = zlib.compress(msg, zlib.Z_BEST_COMPRESSION)
+    print('ziplen-co-->',len(msg),len(dat))
+    return dat
 
-#硬盘序列号
-        print 'disk id:', physical_disk.SerialNumber.strip()
-        tmpdict = {}
-        tmpdict["Caption"] = physical_disk.Caption
-        tmpdict["Size"] = long(physical_disk.Size)/1000/1000/1000
-        tmplist.append(tmpdict)
-    for board_id in c.Win32_BaseBoard():
+#解压缩
+def _decompress(dat):
+    msg = zlib.decompress(dat)
+    print('ziplen-de-->',len(dat),len(msg))
+    return msg
 
-#主板序列号
-        encrypt_str = encrypt_str+board_id.SerialNumber.strip()
-        print "main board id:",board_id.SerialNumber.strip()
-    for mac in c.Win32_NetworkAdapter():
 
-#mac 地址（包括虚拟机的）
-        print "mac addr:", mac.MACAddress
-    for bios_id in c.Win32_BIOS():
+def postDataToURL(purl,data,isTest = False):
+    rurl = ''
+    if isTest:
+        rurl = testHost + purl
+    else:
+        rurl = Host + purl
+    print rurl
+    cdata = _compress(data)
+    response = requests.post(rurl,data=cdata,verify=False)
+    dat = response.text
+    return dat
 
-#bios 序列号
-        encrypt_str = encrypt_str+bios_id.SerialNumber.strip()
-        print "bios number:", bios_id.SerialNumber.strip()
-    print "encrypt_str:", encrypt_str
+def getDataFromURL(purl,isTest = False):
+    
+    rurl = ''
+    if isTest:
+        rurl = testHost + purl
+    else:
+        rurl = Host + purl
+    print rurl
+    try:
+        req = urllib2.Request(rurl)
+        req.add_header('User-agent', 'Mozilla 5.10')
+        res = urllib2.urlopen(req)
+        html = res.read()
+        return html
+    except Exception, e:
+        print e
+    return None
 
-#加密算法
-    print zlib.adler32(encrypt_str)
-    return encrypt_str 
+def trail(dmsg,isTest = False):
+    dat = json.dumps(dmsg)
+    res = postDataToURL('trail',dat,isTest)
+    print(res)
+    return res
 
-c = wmi.WMI()
-#处理器
-def printCPU():
-    tmpdict = {}
-    tmpdict["CpuCores"] = 0
-    for cpu in c.Win32_Processor():     
-        tmpdict["cpuid"] = cpu.ProcessorId.strip()
-        tmpdict["CpuType"] = cpu.Name
-        tmpdict['systemName'] = cpu.SystemName
-        try:
-            tmpdict["CpuCores"] = cpu.NumberOfCores
-        except:
-            tmpdict["CpuCores"] += 1
-        tmpdict["CpuClock"] = cpu.MaxClockSpeed 
-        tmpdict['DataWidth'] = cpu.DataWidth
-    print tmpdict
-    return  tmpdict
+def bind(dmsg,isTest = False):
 
-#主板
-def printMain_board():
-    boards = []
-    # print len(c.Win32_BaseBoard()):
-    for board_id in c.Win32_BaseBoard():
-        tmpmsg = {}
-        tmpmsg['UUID'] = board_id.qualifiers['UUID'][1:-1]   #主板UUID,有的主板这部分信息取到为空值，ffffff-ffffff这样的
-        tmpmsg['SerialNumber'] = board_id.SerialNumber                #主板序列号
-        tmpmsg['Manufacturer'] = board_id.Manufacturer       #主板生产品牌厂家
-        tmpmsg['Product'] = board_id.Product                 #主板型号
-        boards.append(tmpmsg)
-    print boards
-    return boards
+    dat = json.dumps(dmsg)
+    res = postDataToURL('bind',dat,isTest)
+    print(res)
+    return res
 
-#BIOS
-def printBIOS():
-    bioss = []
-    for bios_id in c.Win32_BIOS():
-        tmpmsg = {}
-        tmpmsg['BiosCharacteristics'] = bios_id.BiosCharacteristics   #BIOS特征码
-        tmpmsg['version'] = bios_id.Version                           #BIOS版本
-        tmpmsg['Manufacturer'] = bios_id.Manufacturer.strip()                 #BIOS固件生产厂家
-        tmpmsg['ReleaseDate'] = bios_id.ReleaseDate                   #BIOS释放日期
-        tmpmsg['SMBIOSBIOSVersion'] = bios_id.SMBIOSBIOSVersion       #系统管理规范版本
-        bioss.append(tmpmsg)
-    print bioss
-    return bioss
+def check(dmsg,isTest = False):
+    dat = json.dumps(dmsg)
+    res = postDataToURL('check',dat,isTest)
+    print(res)
+    return res
 
-#硬盘
-def printDisk():
-    disks = []
-    for disk in c.Win32_DiskDrive():
-        # print disk.__dict__
-        tmpmsg = {}
-        tmpmsg['SerialNumber'] = disk.SerialNumber.strip()
-        tmpmsg['DeviceID'] = disk.DeviceID
-        tmpmsg['Caption'] = disk.Caption
-        tmpmsg['Size'] = disk.Size
-        tmpmsg['UUID'] = disk.qualifiers['UUID'][1:-1]
-        disks.append(tmpmsg)
-    for d in disks:
-        print d
-    return disks
-
-#内存
-def printPhysicalMemory():
-    memorys = []
-    for mem in c.Win32_PhysicalMemory():
-        tmpmsg = {}
-        tmpmsg['UUID'] = mem.qualifiers['UUID'][1:-1]
-        tmpmsg['BankLabel'] = mem.BankLabel
-        tmpmsg['SerialNumber'] = mem.SerialNumber.strip()
-        tmpmsg['ConfiguredClockSpeed'] = mem.ConfiguredClockSpeed
-        tmpmsg['Capacity'] = mem.Capacity
-        tmpmsg['ConfiguredVoltage'] = mem.ConfiguredVoltage
-        memorys.append(tmpmsg)
-    for m in memorys:
-        print m
-    return memorys
-
-#电池信息，只有笔记本才会有电池选项
-def printBattery():
-    isBatterys = False
-    for b in c.Win32_Battery():
-        isBatterys = True
-    return isBatterys
-
-#网卡mac地址：
-def printMacAddress():
-    macs = []
-    for n in  c.Win32_NetworkAdapter():
-        mactmp = n.MACAddress
-        if mactmp and len(mactmp.strip()) > 5:
-            tmpmsg = {}
-            tmpmsg['MACAddress'] = n.MACAddress
-            tmpmsg['Name'] = n.Name
-            tmpmsg['DeviceID'] = n.DeviceID
-            tmpmsg['AdapterType'] = n.AdapterType
-            tmpmsg['Speed'] = n.Speed
-            macs.append(tmpmsg)
-    print macs
-    return macs
 
 def main():
 
-    printCPU()
-    printMain_board()
-    printBIOS()
-    printDisk()
-    printPhysicalMemory()
-    printMacAddress()
-    print printBattery()
+    tmp = {}
+    tmphard = {}
+    tmphard['cpu'] = {'cpuip':'123456789','cpuspeed':'3.4G','cpucore':4,'cpures':'intel i5'}
+    tmphard['harddisk'] = {'sid':'adbcd1234','UUID':'xxxx-xxxx-xxxx-xxxx','Size':1024000}
+    tmphard['memory'] = [{'sid':'abckdaeff111','UUID':'xxxx-xxxx-xxxx-0001','Size':8000},{'sid':'abckdaeff111','UUID':'xxxx-xxxx-xxxx-0002','Size':8000}]
+    tmphard['mainboard'] = {'sid':'djo2032i11','UUID':'mainboard-ccxxx-cefesd-xxxx'}
+    tmphard['BIOS'] = {'sid':'doeibios000','version':'versionxxx'}
+    tmphard['netMacaddr'] = {'name':'netcard','mac':'12-34-32-12-33'}
+    tmp['hardmsg'] = tmphard
+
+    tmp['cardid'] = ''
+
+    tmp['time'] = str(int(time.time()))
+
+    tmp['type'] = 'trail'
+
+    trail(tmp,isTest = True)
+    time.sleep(0.5)
     
+    tmp = {}
+    tmphard = {}
+    tmphard['cpu'] = {'cpuip':'123456789','cpuspeed':'3.4G','cpucore':4,'cpures':'intel i5'}
+    tmphard['harddisk'] = {'sid':'adbcd1234','UUID':'xxxx-xxxx-xxxx-xxxx','Size':1024000}
+    tmphard['memory'] = [{'sid':'abckdaeff111','UUID':'xxxx-xxxx-xxxx-0001','Size':8000},{'sid':'abckdaeff111','UUID':'xxxx-xxxx-xxxx-0002','Size':8000}]
+    tmphard['mainboard'] = {'sid':'djo2032i11','UUID':'mainboard-ccxxx-cefesd-xxxx'}
+    tmphard['BIOS'] = {'sid':'doeibios000','version':'versionxxx'}
+    tmphard['netMacaddr'] = {'name':'netcard','mac':'12-34-32-12-33'}
+    tmp['hardmsg'] = tmphard
+
+    tmpCard = {}
+    tmpCard['sid'] = 'testcard12334928392'
+    tmp['cardid'] = tmpCard
+
+    tmp['time'] = str(int(time.time()))
+
+    tmp['type'] = 'bind'
+
+    bind(tmp,isTest = True)
+    time.sleep(0.5)
+
+    tmp = {}
+    tmphard = {}
+    tmphard['cpu'] = {'cpuip':'123456789','cpuspeed':'3.4G','cpucore':4,'cpures':'intel i5'}
+    tmphard['harddisk'] = {'sid':'adbcd1234','UUID':'xxxx-xxxx-xxxx-xxxx','Size':1024000}
+    tmphard['memory'] = [{'sid':'abckdaeff111','UUID':'xxxx-xxxx-xxxx-0001','Size':8000},{'sid':'abckdaeff111','UUID':'xxxx-xxxx-xxxx-0002','Size':8000}]
+    tmphard['mainboard'] = {'sid':'djo2032i11','UUID':'mainboard-ccxxx-cefesd-xxxx'}
+    tmphard['BIOS'] = {'sid':'doeibios000','version':'versionxxx'}
+    tmphard['netMacaddr'] = {'name':'netcard','mac':'12-34-32-12-33'}
+    tmp['hardmsg'] = tmphard
+
+    tmpCard = {}
+    tmpCard['sid'] = 'testcard12334928392'
+    tmp['cardid'] = tmpCard
+
+    tmp['time'] = str(int(time.time()))
+
+    tmp['type'] = 'check'
+
+    check(tmp,isTest = True)
+    time.sleep(0.5)
 
 if __name__ == '__main__':
     main()
