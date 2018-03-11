@@ -66,10 +66,21 @@ class Authentication(object):
     def sendGPubKeyToServer(self):
         gpubkeypsck1 = self.RSAObj.getGPubkey()
         res = clienttool.postDataToURL(self.sendUPubKeyUrl, gpubkeypsck1)
+        print(res)  
+        #服务器返回用户数据AES加密关键字
+        #之后服务器发送下来的文件用户保存在本地时使用userHardID + AES关键字的sha1值加密保存
+        #AES关键字使用userHardID + 一个特别字符串保存在本地
 
     #获取软件运行类型,1.试用,2.已注册,3.注册服务器连接失败
     def checkSoftRunState(self):
-        pass
+        print('checkSoftRunState---->...')
+
+
+    def getDataFromServer(self,url,name):
+        dat = clienttool.postDataToURL(url, str(name))
+        ddat = self.RSAObj.decryptWithGhostPriKey(dat)
+        print(ddat)
+        return ddat
 
 def main():
 

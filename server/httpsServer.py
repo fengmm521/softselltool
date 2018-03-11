@@ -70,6 +70,15 @@ class myHandler(BaseHTTPRequestHandler):
                 self.wfile.write(f.read())  
                 f.close()  
                 return 
+            elif self.path.endswith(".json"): #更新的update.json文件获取
+                mimetype = 'application/json'
+                f = open(curdir + os.sep + self.path, 'rb')  
+                self.send_response(200)  
+                self.send_header('Content-type',mimetype)  
+                self.end_headers()  
+                self.wfile.write(f.read())  
+                f.close()  
+                return 
             
             if self.client_address[0] == '':
                 print self.client_address[0]
