@@ -50,11 +50,10 @@ def getDataFromURL(purl,isTest = False):
         rurl = Host + purl
     print rurl
     try:
-        req = urllib2.Request(rurl)
-        req.add_header('User-agent', 'Mozilla 5.10')
-        res = urllib2.urlopen(req)
-        html = res.read()
-        return html
+        s = requests.session()
+        s.headers.update({'User-agent', 'Mozilla 5.10'})
+        res = s.get(rurl, verify=False)
+        return res.text
     except Exception, e:
         print e
     return None
