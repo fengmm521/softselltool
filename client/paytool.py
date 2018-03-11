@@ -7,176 +7,73 @@
 
 import os, sys
 import time
-import wmi,zlib
+import clienttool
+import RSAtool
+import AEStool
+import NetWorkTest
 
-#http://www.cnblogs.com/freeliver54/archive/2008/04/08/1142356.html
 
-#http://blog.csdn.net/xtx1990/article/details/7288903 
+class Authentication(object):
+    """docstring for Authentication"""
+    def __init__(self):
+        self.version = None     #软件版本
+        self.hardMsg = None     #软件运行硬件环境信息
+        self.osMsg = None       #软件运行操作系统
+        self.osVersion = None   #软件运行操作系统版本
+        self.RegistCode = None  #购买的注册码
+        self.AESKey = None      #使用注册码和硬件码生成的AES本地数据加密密码
+        self.mRSAPubKey = None  #验证服务器的公钥密码
+        self.hosturl = 'https://sell1.woodcol.com:4443/'
+        self.mkeyUrl = self.hosturl + 'public.pem'          #向服务器请求服务器公钥
+        self.sendUPubKeyUrl = self.hosturl + 'userPubkey'   #使用服务器端公钥加密后向服务器发送自已的公钥
+        self.trailUrl = self.hosturl + 'trail'              #试用
+        self.bindUrl = self.hosturl + 'bind'                #绑定
+        self.checkUrl = self.hosturl + 'check'              #验证
 
-def get_cpu_info() :
-    tmpdict = {}
-    tmpdict["CpuCores"] = 0
-    c = wmi.WMI()
-#   print c.Win32_Processor().['ProcessorId']
-#   print c.Win32_DiskDrive()
-    for cpu in c.Win32_Processor():     
-        # print cpu
-        tmpdict["cpuid"] = cpu.ProcessorId.strip()
-        tmpdict["CpuType"] = cpu.Name
-        try:
-            tmpdict["CpuCores"] = cpu.NumberOfCores
-        except:
-            tmpdict["CpuCores"] += 1
-            tmpdict["CpuClock"] = cpu.MaxClockSpeed 
-    return tmpdict
-def get_disk_info():
-    tmplist = []
-    encrypt_str = ""
-    c = wmi.WMI ()
-    for cpu in c.Win32_Processor():
+        self.mKeyPth = './data'         #服务器公钥保存地址
+        self.gKeyPth = './data'         #本地密钥
+        self.registCodePth = './data'   #已注册信息
+        #从服务器下载的库文件，当用户注册后或者发送试用时从服务器下载得到,试用版会得到有库文件使用次数限制内容,注册版库文件没有使用次数限制
+        self.libPth = './lib'   
+        self.AESObj = None
+        self.RSAObj = None
 
-#cpu 序列号
-        encrypt_str = encrypt_str+cpu.ProcessorId.strip()
-        print "cpu id:", cpu.ProcessorId.strip()
-    for physical_disk in c.Win32_DiskDrive():
-        encrypt_str = encrypt_str+physical_disk.SerialNumber.strip()
+        self.baiduStat = False           #国内网络访问是否正常
+        self.YoutubeStat = False         #youtube访问是否正常
+        self.GoogleStat = False          #google访问是否正常
+        self.serverStat = False          #验证服务器设置是否正常
 
-#硬盘序列号
-        print 'disk id:', physical_disk.SerialNumber.strip()
-        tmpdict = {}
-        tmpdict["Caption"] = physical_disk.Caption
-        tmpdict["Size"] = long(physical_disk.Size)/1000/1000/1000
-        tmplist.append(tmpdict)
-    for board_id in c.Win32_BaseBoard():
+        self.init()
 
-#主板序列号
-        encrypt_str = encrypt_str+board_id.SerialNumber.strip()
-        print "main board id:",board_id.SerialNumber.strip()
-    for mac in c.Win32_NetworkAdapter():
+    def init(self):
 
-#mac 地址（包括虚拟机的）
-        print "mac addr:", mac.MACAddress
-    for bios_id in c.Win32_BIOS():
+        self.baiduStat = NetWorkTest.isNetChainOK()
+        self.YoutubeStat = NetWorkTest.isNetYouTubeOK()
+        self.GoogleStat = NetWorkTest.isNetUSAOK()
+        self.serverStat = NetWorkTest.isNetStateFromURL()
 
-#bios 序列号
-        encrypt_str = encrypt_str+bios_id.SerialNumber.strip()
-        print "bios number:", bios_id.SerialNumber.strip()
-    print "encrypt_str:", encrypt_str
+        #此时会生一个临时的RSA私钥和公钥
+        self.RSAObj = RSAtool.prpcrypt(self.mkeyUrl, self.mKeyPth, self.gKeyPth,isCreateGkey = True)
+    
+        if self.YoutubeStat and self.serverStat:
+            self.sendGPubKeyToServer()
+            self.checkSoftRunState()
+        else:
+            print('访问youtube或者本地服务器错误')
 
-#加密算法
-    print zlib.adler32(encrypt_str)
-    return encrypt_str 
 
-c = wmi.WMI()
-#处理器
-def printCPU():
-    tmpdict = {}
-    tmpdict["CpuCores"] = 0
-    for cpu in c.Win32_Processor():     
-        tmpdict["cpuid"] = cpu.ProcessorId.strip()
-        tmpdict["CpuType"] = cpu.Name
-        tmpdict['systemName'] = cpu.SystemName
-        try:
-            tmpdict["CpuCores"] = cpu.NumberOfCores
-        except:
-            tmpdict["CpuCores"] += 1
-        tmpdict["CpuClock"] = cpu.MaxClockSpeed 
-        tmpdict['DataWidth'] = cpu.DataWidth
-    print tmpdict
-    return  tmpdict
+    #将用户公钥发送给服务器端
+    def sendGPubKeyToServer(self):
+        gpubkeypsck1 = self.RSAObj.getGPubkey()
+        res = clienttool.postDataToURL(self.sendUPubKeyUrl, gpubkeypsck1)
 
-#主板
-def printMain_board():
-    boards = []
-    # print len(c.Win32_BaseBoard()):
-    for board_id in c.Win32_BaseBoard():
-        tmpmsg = {}
-        tmpmsg['UUID'] = board_id.qualifiers['UUID'][1:-1]   #主板UUID,有的主板这部分信息取到为空值，ffffff-ffffff这样的
-        tmpmsg['SerialNumber'] = board_id.SerialNumber                #主板序列号
-        tmpmsg['Manufacturer'] = board_id.Manufacturer       #主板生产品牌厂家
-        tmpmsg['Product'] = board_id.Product                 #主板型号
-        boards.append(tmpmsg)
-    print boards
-    return boards
-
-#BIOS
-def printBIOS():
-    bioss = []
-    for bios_id in c.Win32_BIOS():
-        tmpmsg = {}
-        tmpmsg['BiosCharacteristics'] = bios_id.BiosCharacteristics   #BIOS特征码
-        tmpmsg['version'] = bios_id.Version                           #BIOS版本
-        tmpmsg['Manufacturer'] = bios_id.Manufacturer.strip()                 #BIOS固件生产厂家
-        tmpmsg['ReleaseDate'] = bios_id.ReleaseDate                   #BIOS释放日期
-        tmpmsg['SMBIOSBIOSVersion'] = bios_id.SMBIOSBIOSVersion       #系统管理规范版本
-        bioss.append(tmpmsg)
-    print bioss
-    return bioss
-
-#硬盘
-def printDisk():
-    disks = []
-    for disk in c.Win32_DiskDrive():
-        # print disk.__dict__
-        tmpmsg = {}
-        tmpmsg['SerialNumber'] = disk.SerialNumber.strip()
-        tmpmsg['DeviceID'] = disk.DeviceID
-        tmpmsg['Caption'] = disk.Caption
-        tmpmsg['Size'] = disk.Size
-        tmpmsg['UUID'] = disk.qualifiers['UUID'][1:-1]
-        disks.append(tmpmsg)
-    for d in disks:
-        print d
-    return disks
-
-#内存
-def printPhysicalMemory():
-    memorys = []
-    for mem in c.Win32_PhysicalMemory():
-        tmpmsg = {}
-        tmpmsg['UUID'] = mem.qualifiers['UUID'][1:-1]
-        tmpmsg['BankLabel'] = mem.BankLabel
-        tmpmsg['SerialNumber'] = mem.SerialNumber.strip()
-        tmpmsg['ConfiguredClockSpeed'] = mem.ConfiguredClockSpeed
-        tmpmsg['Capacity'] = mem.Capacity
-        tmpmsg['ConfiguredVoltage'] = mem.ConfiguredVoltage
-        memorys.append(tmpmsg)
-    for m in memorys:
-        print m
-    return memorys
-
-#电池信息，只有笔记本才会有电池选项
-def printBattery():
-    isBatterys = False
-    for b in c.Win32_Battery():
-        isBatterys = True
-    return isBatterys
-
-#网卡mac地址：
-def printMacAddress():
-    macs = []
-    for n in  c.Win32_NetworkAdapter():
-        mactmp = n.MACAddress
-        if mactmp and len(mactmp.strip()) > 5:
-            tmpmsg = {}
-            tmpmsg['MACAddress'] = n.MACAddress
-            tmpmsg['Name'] = n.Name
-            tmpmsg['DeviceID'] = n.DeviceID
-            tmpmsg['AdapterType'] = n.AdapterType
-            tmpmsg['Speed'] = n.Speed
-            macs.append(tmpmsg)
-    print macs
-    return macs
+    #获取软件运行类型,1.试用,2.已注册,3.注册服务器连接失败
+    def checkSoftRunState(self):
+        pass
 
 def main():
 
-    printCPU()
-    printMain_board()
-    printBIOS()
-    printDisk()
-    printPhysicalMemory()
-    printMacAddress()
-    print printBattery()
+    pass
     
 
 if __name__ == '__main__':

@@ -56,6 +56,27 @@ class prpcrypt():
         else:
             f.write(self.gpublic_pem.save_pkcs1())
         f.close()
+
+    def saveMPubKeyToFile(self,fname,pemkeypkcs1):
+        f = open(self.mkeyPth + os.sep + fname + '.pem','w')
+        if sys.version_info > (3,0):
+            f.write(pemkeypkcs1)
+        else:
+            f.write(pemkeypkcs1)
+        f.close()
+
+    def getGPubkey(self):
+        if sys.version_info > (3,0):
+            return self.gpublic_pem.save_pkcs1().decode()
+        else:
+            return self.gpublic_pem.save_pkcs1()
+
+    def getKeyWithPKCS1(self,pemkeypkcs1):
+        if sys.version_info > (3,0):
+            return rsa.PrivateKey.load_pkcs1(pemkeypkcs1.encode())
+        else:
+            return rsa.PrivateKey.load_pkcs1(pemkeypkcs1)
+
     def readGhostKeyFromFile(self):
         pripth = self.gkeyPth + '/gprivate.pem'
         pubpth = self.gkeyPth + '/gpublic.pem'
@@ -102,13 +123,14 @@ class prpcrypt():
         f.close()
     #向服务器请求pubkey
     def requestMasterPubkey(self):
-        rurl = self.mURL
-        try:
-            res = requests.get(self.mURL, verify=False)
-            print(res.text)
-            return res.text
-        except Exception as e:
-            print(e)
+        if self.mURL[0:4] == 'http':
+            rurl = self.mURL
+            try:
+                res = requests.get(self.mURL, verify=False)
+                print(res.text)
+                return res.text
+            except Exception as e:
+                print(e)
         return None
     #生成自已的公私钥对
     def createGhostKey(self):
@@ -136,6 +158,17 @@ class prpcrypt():
             return cipher_text
         else:
             dmsg = rsa.encrypt(tmpmsg, self.mpublic_pem)
+            return dmsg
+
+    def encryptWithPubKey(self,msg,pubpemkey,isBase64Out = True):
+        tmpmsg = msg
+        if sys.version_info > (3,0):
+            tmpmsg = msg.encode()
+        if isBase64Out:
+            cipher_text = base64.b64encode(rsa.encrypt(tmpmsg, pubpemkey))
+            return cipher_text
+        else:
+            dmsg = rsa.encrypt(tmpmsg, pubpemkey)
             return dmsg
 
     #使用交互方公钥验证签名    
@@ -186,11 +219,22 @@ class prpcrypt():
         vermsg = rsa.verify(dmsg, sign, self.gpublic_pem)
         return vermsg
 
+    #使用本地公钥验证签名    
+    def verifyWithPubKey(self,msg,sign,pubpemkey,isBase64In = True):
+        tmpmsg = msg
+        if sys.version_info > (3,0):
+            tmpmsg = msg.encode()
+        dmsg = tmpmsg
+        if isBase64In:
+            dmsg = base64.b64decode(msg)
+        vermsg = rsa.verify(dmsg, sign, pubpemkey)
+        return vermsg
+
 
 
 
 if __name__ == '__main__':
-    pc = prpcrypt(mURL='', mkeyPth = '.', gkeyPth = '.',isCreateGkey = False)
+    pc = prpcrypt(mURL='', mkeyPth = '.', gkeyPth = '.',isCreateGkey = True)
     msg = 'abcdefg---001'
     pmsg = pc.encryptWithGhostPubKey(msg)
     omsg = pc.decryptWithGhostPriKey(pmsg)

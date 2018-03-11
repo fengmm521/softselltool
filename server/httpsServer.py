@@ -60,6 +60,16 @@ class myHandler(BaseHTTPRequestHandler):
                 self.wfile.write(f.read())  
                 f.close()  
                 return
+            #客户端请求服务器公钥
+            elif self.path.endswith(".pem"):
+                mimetype = 'application/text'
+                f = open(curdir + os.sep + self.path, 'rb')  
+                self.send_response(200)  
+                self.send_header('Content-type',mimetype)  
+                self.end_headers()  
+                self.wfile.write(f.read())  
+                f.close()  
+                return 
             
             if self.client_address[0] == '':
                 print self.client_address[0]
@@ -67,12 +77,18 @@ class myHandler(BaseHTTPRequestHandler):
             if self.path[0:5] == 'trail':    #1.client试用登陆
                 print('trail---->',self.path)
                 self.sendEmptyMsg()
+                return 'trail'
             elif self.path[0:4] == 'bind':   #2.client绑定注册码和硬件码
                 print('bind---->',self.path)
                 self.sendEmptyMsg()
+                return 'bind'
             elif self.path[0:5] == 'check':  #3.client验证注册码和硬件码
                 print('check---->',self.path)
                 self.sendEmptyMsg()
+                return 'check'
+            elif self.path[0:7] == 'userPubkey':#客户端发送RSA公钥上来
+                print('userPubkey--->',self.path)
+                return 'userPubkey'
             elif self.path[0:7] == 'create': #1.易卡生成注册码
                 #https://www.xxxx.com/create?type=1
                 #https://www.xxxx.com/create?type=1&count=50
@@ -88,6 +104,7 @@ class myHandler(BaseHTTPRequestHandler):
                 kas = kas[:-1]
                 # self.sendMsg(kas)
                 self.sendEmptyMsg()
+                return 'create'
             elif self.path[0:6] == 'selled': #2.1k出售成功
                 #异步通知地址:www.xxxx.com/selled
                 #POST一共会传递4个参数goods_id,trade_no,card_password,contact
@@ -97,6 +114,7 @@ class myHandler(BaseHTTPRequestHandler):
                 #contact : 联系方式
                 print('selled---->',self.path)
                 self.sendEmptyMsg()
+                return 'selled'
             elif self.path[0:8] == 'mycreate':  #1.手动创建新的卡密
                 kas = ''
                 count = 0
@@ -107,6 +125,7 @@ class myHandler(BaseHTTPRequestHandler):
                     kas += tmpka + ','
                 kas = kas[:-1]
                 self.sendMsg(kas)
+                return 'mycreate'
             else:
                 time.sleep(3)
                 self.sendEmptyMsg()
@@ -122,13 +141,12 @@ class myHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write('')
 
-    def sendMsg(self,toUserName,fromUserName,msg):
-        sendmsg = msg
+    def sendMsg(self,msg):
         self.send_response(200)
         self.send_header("Content-type", 'application/text; encoding=utf-8')
-        self.send_header("Content-Length", str(len(sendmsg)))
+        self.send_header("Content-Length", str(len(msg)))
         self.end_headers()
-        self.wfile.write(sendmsg)
+        self.wfile.write(msg)
 
     #校验消息真实性
     def verifyMsg(self,reqdict):

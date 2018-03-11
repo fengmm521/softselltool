@@ -58,6 +58,20 @@ def getDataFromURL(purl,isTest = False):
         print e
     return None
 
+def getUrl(purl):
+    try:
+        if purl[0:5] == 'https':
+            res = requests.get(self.purl, verify=False)
+            print(res.text)
+            return res.text
+        else:
+            res = requests.get(self.purl)
+            print(res.text)
+            return res.text
+    except Exception as e:
+        print(e)
+    return None
+
 def trail(dmsg,isTest = False):
     dat = json.dumps(dmsg)
     res = postDataToURL('trail',dat,isTest)
