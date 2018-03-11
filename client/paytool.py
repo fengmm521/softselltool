@@ -82,6 +82,11 @@ class Authentication(object):
         print(ddat)
         return ddat
 
+    def sigenMsg(self,msgData):
+        smsg = self.RSAObj.signWithGhostPriKey(msg)
+        return smsg
+
+
 def main():
 
     pass

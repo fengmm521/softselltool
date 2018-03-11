@@ -40,6 +40,9 @@ print 'selfIP:',selfip
 print 'setLastIP:',setLastIP
 
 #sell1.woodcol.com
+import registTool
+
+registtool = registTool.RegistTool()
 
 class myHandler(BaseHTTPRequestHandler):
     def do_GET(self):  
