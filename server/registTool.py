@@ -6,9 +6,11 @@
 #https服务器
 import os
 import json
-
+import time
 import RSAtool
 import dbTool
+import hashlib
+import base58
 
 def httpGet(urlstr):
     req = urllib2.Request(urlstr)
@@ -89,6 +91,30 @@ class RegistTool(object):
         emsg = self.encrypMsgToUser(userHardID, msg)
         #https响应消息给用户
         sendHandel.sendMsg(emsg)
+
+    #生成新的注册码
+    def createRegistCode(self,count = 50):
+        ks = []
+        sendtmp = str(time.time())
+        
+        crcount = self.db.select('createcount')
+        if crcount == None:
+            crcount = 1
+        else:
+            crcount = int(crcount) + 1
+        kfrontstr = base58.b58encode_int(crcount)
+        if len(kfrontstr) == 1:
+            kfrontstr = '0' + kfrontstr
+        for i in range(count):
+            tmpn = '0x' + hashlib.md5(sendtmp + str(i)).hexdigest()
+            num = int(tmpn,16)
+            bastr = base58.b58encode_int(num)
+            tmpka = kfrontstr + bastr
+            ks.append(tmpka)
+        vs = ['{}'] * count
+        self.db.insetList(ks, vs)
+        jout = json.dumps(ks)
+        return jout
 
 
 
