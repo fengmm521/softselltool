@@ -32,6 +32,7 @@ class RegistTool(object):
             os.mkdir(self.userPubKeyPth)
         
         self.RSAObj = None
+        
         self.dbPth = dbpth
 
 
