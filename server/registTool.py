@@ -22,7 +22,7 @@ def httpGet(urlstr):
 
 class RegistTool(object):
     """docstring for WXMsgTool"""
-    def __init__(self,keyPth = './regkeys',dbpth = './db'):
+    def __init__(self,keyPth = './regkeys',dbpth = './db/keysdb'):
         super(RegistTool, self).__init__()
         
         self.keyPth = keyPth
@@ -112,15 +112,16 @@ class RegistTool(object):
             tmpka = kfrontstr + bastr
             ks.append(tmpka)
         vs = ['{}'] * count
-        self.db.insetList(ks, vs)
+        isOK = self.db.insetList(ks, vs)
         jout = json.dumps(ks)
-        return jout
+        return jout,isOK
 
 
 
 if __name__ == '__main__':
-    
-
+    regtool = RegistTool()
+    keys = regtool.createRegistCode()
+    print keys
 
 # # 生成rsa密钥
 # $ openssl genrsa -des3 -out server.key 2048
