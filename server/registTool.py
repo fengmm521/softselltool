@@ -36,6 +36,7 @@ class RegistTool(object):
         self.dbPth = dbpth
 
 
+
         self.userPubKeys = {}
 
         self.db = dbTool.DBMObj(self.dbPth)
