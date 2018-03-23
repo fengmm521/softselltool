@@ -70,7 +70,7 @@ class SystemMsgObj(object):
 
     def getUserHardID(self):
         if self.ostype == 1: #windwos
-            self.sysMsg['userHardID'] = ''
+            self.sysMsg['userHardID'] = self.sysMsg['mainboard'][0]['UUID']
             #windows下以电脑主板的UUID为编号
             #当主板UUID不存存或者无效时，使用容量最大硬盘的UUID + CPUID的MD5值
             #如果硬盘UUID无法获取，使用网卡MAC地址 + CPUID
