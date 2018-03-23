@@ -7,7 +7,6 @@
 import os
 import json
 import time
-import RSAtool
 import dbTool
 import hashlib
 import base58
@@ -57,7 +56,7 @@ class SoftKeysTool(object):
             self.db.inset(nkey, strtmp)
         
     def getHardAndOsMsgWithSoftID(self,softID):
-        strdat = self.db.select(softID):
+        strdat = self.db.select(softID)
         if strdat != None:
             odic = json.loads(strdat)
             return odic
