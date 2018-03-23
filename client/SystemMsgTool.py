@@ -9,6 +9,7 @@ import os, sys
 import time
 import platform
 import zlib
+import uuidTool
 
 #http://www.cnblogs.com/freeliver54/archive/2008/04/08/1142356.html
 
@@ -44,42 +45,51 @@ class SystemMsgObj(object):
             import wmi
             self.c = wmi.WMI()
             self.initWinSystemHardMsg()
+            self._winMachineGuid()
         elif self.ostype == 2:
             self.initMacSystemHardMsg()
         elif self.ostype == 3:
             self.initLinuxSystemHardMsg()
-        self._winMachineGuid()
+        
         self.getUserHardID()
     def initWinSystemHardMsg(self):
-        self.sysMsg['cpu'] = self._printCPU()
-        self.sysMsg['mainboard'] = self._printMain_board()
-        self.sysMsg['BIOS'] = self._printBIOS()
-        self.sysMsg['disk'] = self._printDisk()
-        self.sysMsg['memory'] = self._printPhysicalMemory()
-        self.sysMsg['battery'] = self._printBattery()
-        self.sysMsg['MacAddr'] = self._printMacAddress()
+        hardmsg = {}
+        hardmsg['cpu'] = self._printCPU()
+        hardmsg['mainboard'] = self._printMain_board()
+        hardmsg['BIOS'] = self._printBIOS()
+        hardmsg['disk'] = self._printDisk()
+        hardmsg['memory'] = self._printPhysicalMemory()
+        hardmsg['battery'] = self._printBattery()
+        hardmsg['MacAddr'] = self._printMacAddress()
+        self.sysMsg['hard'] = hardmsg
         self.getUserHardID()
         return self.sysMsg
     def initMacSystemHardMsg(self):
-        pass
+        self.sysMsg['hard'] = self.getMacHardMsg()
+
+    def getMacHardMsg(self):
+        #/usr/sbin/system_profiler SPHardwareDataType
+        cmd = '/usr/sbin/system_profiler SPHardwareDataType'
+        output = os.popen(cmd)
+        ostr = output.read()
+        ostrs = ostr.split('\n')
+        out = {}
+        for d in ostrs:
+            tmpd = d.strip()
+            if len(tmpd) > 1:
+                tmpds = tmpd.split(':')
+                if len(tmpds) > 1:
+                    k = tmpds[0].strip().replace(' ','_')
+                    v = tmpds[1].strip().replace(' ','_')
+                    if len(v) > 0:
+                        out[k] = v
+        return out
     def initLinuxSystemHardMsg(self):
         pass
-
     def getSysMsg(self):
         return self.sysMsg
-
     def getUserHardID(self):
-        if self.ostype == 1: #windwos
-            self.sysMsg['userHardID'] = self.sysMsg['mainboard'][0]['UUID']
-            #windows下以电脑主板的UUID为编号
-            #当主板UUID不存存或者无效时，使用容量最大硬盘的UUID + CPUID的MD5值
-            #如果硬盘UUID无法获取，使用网卡MAC地址 + CPUID
-        elif self.ostype == 2: #mac
-            self.sysMsg['userHardID'] = ''
-
-        elif self.ostype == 3: #linux
-
-            self.sysMsg['userHardID'] = ''
+        self.sysMsg['userHardID'] = uuidTool.getUUID()
 
     #处理器
     def _printCPU(self):
@@ -185,6 +195,7 @@ class SystemMsgObj(object):
         key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE,"SOFTWARE\\Microsoft\\Cryptography",0,_winreg.KEY_READ | _winreg.KEY_WOW64_64KEY)
         result = _winreg.QueryValueEx(key, "MachineGuid")
         self.sysMsg['machineGuid'] = result[0].lower()
+
 
 def main():
     import json

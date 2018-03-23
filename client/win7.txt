@@ -1,69 +1,71 @@
 {
   "osplatform": "Windows-7-6.1.7601-SP1",
-  "disk": [
-    {
-      "Caption": "VBOX HARDDISK ATA Device",
-      "SerialNumber": "42566662633137386439382d6434396164322032",
-      "UUID": "8502C4B2-5FBB-11D2-AAC1-006008C78BC7",
-      "DeviceID": "\\\\.\\PHYSICALDRIVE0",
-      "Size": "53686402560"
-    }
-  ],
+  "userHardID": "38F5C613-510A-B74B-AF14-BFAE5612BC36",
   "ver": [
     "7",
     "6.1.7601",
     "SP1",
     "Multiprocessor Free"
   ],
-  "mainboard": [
-    {
-      "Product": "VirtualBox",
-      "SerialNumber": "0",
-      "UUID": "FAF76B95-798C-11D2-AAD1-006008C78BC7",
-      "Manufacturer": "Oracle Corporation"
-    }
-  ],
-  "BIOS": [
-    {
-      "ReleaseDate": "20061201000000.000000+000",
-      "version": "ACRSYS - 1",
-      "SMBIOSBIOSVersion": "VirtualBox",
-      "BiosCharacteristics": [
-        4,
-        7,
-        15,
-        16,
-        27,
-        30,
-        32
-      ],
-      "Manufacturer": "innotek GmbH"
-    }
-  ],
-  "userHardID": "FAF76B95-798C-11D2-AAD1-006008C78BC7",
-  "MacAddr": [
-    {
-      "MACAddress": "08:00:27:02:F7:31",
-      "Speed": "1000000000",
-      "Name": "Intel(R) PRO/1000 MT Desktop Adapter",
-      "AdapterType": "Ethernet 802.3",
-      "DeviceID": "7"
-    }
-  ],
-  "memory": [
-    
-  ],
+  "hard": {
+    "MacAddr": [
+      {
+        "MACAddress": "08:00:27:02:F7:31",
+        "Speed": "1000000000",
+        "Name": "Intel(R) PRO/1000 MT Desktop Adapter",
+        "AdapterType": "Ethernet 802.3",
+        "DeviceID": "7"
+      }
+    ],
+    "mainboard": [
+      {
+        "Product": "VirtualBox",
+        "SerialNumber": "0",
+        "UUID": "FAF76B95-798C-11D2-AAD1-006008C78BC7",
+        "Manufacturer": "Oracle Corporation"
+      }
+    ],
+    "BIOS": [
+      {
+        "ReleaseDate": "20061201000000.000000+000",
+        "version": "ACRSYS - 1",
+        "SMBIOSBIOSVersion": "VirtualBox",
+        "BiosCharacteristics": [
+          4,
+          7,
+          15,
+          16,
+          27,
+          30,
+          32
+        ],
+        "Manufacturer": "innotek GmbH"
+      }
+    ],
+    "memory": [
+      
+    ],
+    "disk": [
+      {
+        "Caption": "VBOX HARDDISK ATA Device",
+        "SerialNumber": "42566662633137386439382d6434396164322032",
+        "UUID": "8502C4B2-5FBB-11D2-AAC1-006008C78BC7",
+        "DeviceID": "\\\\.\\PHYSICALDRIVE0",
+        "Size": "53686402560"
+      }
+    ],
+    "cpu": {
+      "CpuClock": 2700,
+      "CpuCores": 1,
+      "systemName": "PC-20170622QKZJ",
+      "DataWidth": 64,
+      "cpuid": "None",
+      "CpuType": "Intel(R) Core(TM) i5-5257U CPU @ 2.70GHz"
+    },
+    "battery": true
+  },
   "ostype": 1,
   "osversion": "6.1.7601",
   "os": "Windows",
-  "cpu": {
-    "CpuClock": 2700,
-    "CpuCores": 1,
-    "systemName": "PC-20170622QKZJ",
-    "DataWidth": 64,
-    "cpuid": "None",
-    "CpuType": "Intel(R) Core(TM) i5-5257U CPU @ 2.70GHz"
-  },
-  "battery": true,
   "machineGuid": "a0e38808-34a6-4782-990f-fde878b587de"
 }
