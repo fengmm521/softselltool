@@ -21,6 +21,7 @@ class SoftKeysTool(object):
         
         if not os.path.exists('db'):
             os.mkdir('db')
+        if not os.path.exists(dbpth):
             os.mkdir(dbpth)
         
         
@@ -42,7 +43,7 @@ class SoftKeysTool(object):
         tlen = len(self.db.allKeys())
         sendtmp = str(time.time())
         strtmp = self.getRandomStr()
-        tmpn = '0x' + hashlib.md5(sendtmp + strtmp + str(tlen)).hexdigest()
+        tmpn = '0x' + hashlib.sha256(sendtmp + strtmp + str(tlen)).hexdigest()
         num = int(tmpn,16)
         bastr = base58.b58encode_int(num)
         return bastr
@@ -65,8 +66,8 @@ class SoftKeysTool(object):
 
 
 if __name__ == '__main__':
-    regtool = RegistTool()
-    keys = regtool.createRegistCode()
+    regtool = SoftKeysTool()
+    keys = regtool.createSoftID()
     print keys
 
 # # 生成rsa密钥
