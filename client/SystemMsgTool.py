@@ -48,7 +48,7 @@ class SystemMsgObj(object):
             self.initMacSystemHardMsg()
         elif self.ostype == 3:
             self.initLinuxSystemHardMsg()
-
+        self._winMachineGuid()
         self.getUserHardID()
     def initWinSystemHardMsg(self):
         self.sysMsg['cpu'] = self._printCPU()
@@ -180,6 +180,11 @@ class SystemMsgObj(object):
                 macs.append(tmpmsg)
         # print macs
         return macs
+    def _winMachineGuid(self):
+        import _winreg
+        key = _winreg.OpenKey(_winreg.HKEY_LOCAL_MACHINE,"SOFTWARE\\Microsoft\\Cryptography",0,_winreg.KEY_READ | _winreg.KEY_WOW64_64KEY)
+        result = _winreg.QueryValueEx(key, "MachineGuid")
+        self.sysMsg['machineGuid'] = result[0].lower()
 
 def main():
     import json
@@ -188,7 +193,7 @@ def main():
     # print osmsg
     jstr = json.dumps(osmsg)
     print(jstr)
-    #{"osplatform": "Windows-10-10.0.16299", "disk": [{"Caption": "WDC WD10EZEX-08WN4A0", "SerialNumber": "WD-WCC6Y5KN9ZJT", "UUID": "8502C4B2-5FBB-11D2-AAC1-006008C78BC7", "DeviceID": "\\\\.\\PHYSICALDRIVE0", "Size": "1000202273280"}, {"Caption": "SAMSUNG MZNTY128HDHP-00000", "SerialNumber": "S2YMNY0J782472", "UUID": "8502C4B2-5FBB-11D2-AAC1-006008C78BC7", "DeviceID": "\\\\.\\PHYSICALDRIVE1", "Size": "128034708480"}], "ver": ["10", "10.0.16299", "", "Multiprocessor Free"], "mainboard": [{"Product": "Z270 KRAIT GAMING (MS-7A59)", "SerialNumber": "H316560067", "UUID": "FAF76B95-798C-11D2-AAD1-006008C78BC7", "Manufacturer": "MSI"}], "BIOS": [{"ReleaseDate": "20170207000000.000000+000", "version": "ALASKA - 1072009", "SMBIOSBIOSVersion": "A.40", "BiosCharacteristics": [7, 11, 12, 15, 16, 17, 19, 23, 24, 25, 26, 27, 28, 29, 32, 33, 40, 42, 43], "Manufacturer": "American Megatrends Inc."}], "userHardID": "", "MacAddr": [{"MACAddress": "4C:CC:6A:FB:A3:6C", "Speed": "100000000", "Name": "Intel(R) Ethernet Connection (2) I219-V", "AdapterType": "\u4ee5\u592a\u7f51 802.3", "DeviceID": "1"}], "memory": [{"ConfiguredVoltage": 1200, "Capacity": "8589934592", "UUID": "FAF76B93-798C-11D2-AAD1-006008C78BC7", "ConfiguredClockSpeed": 2400, "SerialNumber": "03980200", "BankLabel": "BANK 1"}, {"ConfiguredVoltage": 1200, "Capacity": "8589934592", "UUID": "FAF76B93-798C-11D2-AAD1-006008C78BC7", "ConfiguredClockSpeed": 2400, "SerialNumber": "A1860200", "BankLabel": "BANK 3"}], "ostype": 1, "osversion": "10.0.16299", "os": "Windows", "cpu": {"CpuClock": 3408, "CpuCores": 4, "systemName": "SC-201710151616", "DataWidth": 64, "cpuid": "BFEBFBFF000906E9", "CpuType": "Intel(R) Core(TM) i5-7500 CPU @ 3.40GHz"}, "battery": false}
+    #{"osplatform": "Windows-10-10.0.16299", "disk": [{"Caption": "WDC WD10EZEX-08WN4A0", "SerialNumber": "WD-WCC6Y5KN9ZJT", "UUID": "8502C4B2-5FBB-11D2-AAC1-006008C78BC7", "DeviceID": "\\\\.\\PHYSICALDRIVE0", "Size": "1000202273280"}, {"Caption": "SAMSUNG MZNTY128HDHP-00000", "SerialNumber": "S2YMNY0J782472", "UUID": "8502C4B2-5FBB-11D2-AAC1-006008C78BC7", "DeviceID": "\\\\.\\PHYSICALDRIVE1", "Size": "128034708480"}], "ver": ["10", "10.0.16299", "", "Multiprocessor Free"], "mainboard": [{"Product": "Z270 KRAIT GAMING (MS-7A59)", "SerialNumber": "H316560067", "UUID": "FAF76B95-798C-11D2-AAD1-006008C78BC7", "Manufacturer": "MSI"}], "BIOS": [{"ReleaseDate": "20170207000000.000000+000", "version": "ALASKA - 1072009", "SMBIOSBIOSVersion": "A.40", "BiosCharacteristics": [7, 11, 12, 15, 16, 17, 19, 23, 24, 25, 26, 27, 28, 29, 32, 33, 40, 42, 43], "Manufacturer": "American Megatrends Inc."}], "userHardID": "", "MacAddr": [{"MACAddress": "4C:CC:6A:FB:A3:6C", "Speed": "100000000", "Name": "Intel(R) Ethernet Connection (2) I219-V", "AdapterType": "\u4ee5\u592a\u7f51 802.3", "DeviceID": "1"}], "memory": [{"ConfiguredVoltage": 1200, "Capacity": "8589934592", "UUID": "FAF76B93-798C-11D2-AAD1-006008C78BC7", "ConfiguredClockSpeed": 2400, "SerialNumber": "03980200", "BankLabel": "BANK 1"}, {"ConfiguredVoltage": 1200, "Capacity": "8589934592", "UUID": "FAF76B93-798C-11D2-AAD1-006008C78BC7", "ConfiguredClockSpeed": 2400, "SerialNumber": "A1860200", "BankLabel": "BANK 3"}], "ostype": 1, "osversion": "10.0.16299", "os": "Windows", "cpu": {"CpuClock": 3408, "CpuCores": 4, "systemName": "SC-201710151616", "DataWidth": 64, "cpuid": "BFEBFBFF000906E9", "CpuType": "Intel(R) Core(TM) i5-7500 CPU @ 3.40GHz"}, "battery": false, "machineGuid": "86ce2b8f-f614-4656-9e5d-ff7208f2f0c6"}
 
 if __name__ == '__main__':
     main()
