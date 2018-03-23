@@ -86,7 +86,7 @@ class SystemMsgObj(object):
         tmpdict = {}
         tmpdict["CpuCores"] = 0
         for cpu in self.c.Win32_Processor():     
-            tmpdict["cpuid"] = cpu.ProcessorId.strip()
+            tmpdict["cpuid"] = str(cpu.ProcessorId).strip()
             tmpdict["CpuType"] = cpu.Name
             tmpdict['systemName'] = cpu.SystemName
             try:
