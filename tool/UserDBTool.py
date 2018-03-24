@@ -12,6 +12,7 @@ import dbTool
 import hashlib
 import base64
 
+
 MAXTESTCOUNT = 5
 
 
@@ -28,7 +29,7 @@ class UserDBTool(object):
         if not os.path.exists(dbpth):
             os.mkdir(dbpth)
 
-        #试用用户下载记录
+        #试用用户下载目录
         self.testdbpth = dbpth + os.sep + 'testdir'
         if not os.path.exists(self.testdbpth):
             os.mkdir(self.testdbpth)
@@ -42,9 +43,24 @@ class UserDBTool(object):
         
         self.basedbPth = dbpth
 
-    #试用用户使用软件唯一ID保存下载的视频
-    def addUserDBWithTestSoftID(self,softID,purl):
-        tusrdat = self.testdb.select(softID)
+        self.usrIPpth = dbpth + os.sep + 'ip'
+
+        
+    #用用户注册码记录登陆IP地址和时间
+    def addUserDBWithRegCode(self,regCode,usrIP):
+        tmpdb = dbTool.DBMObj(self.usrIPpth + os.sep + regCode)
+        dictmp = {'ip':usrIP,'time':int(time.time())}
+        jstr = json.dumps(dictmp)
+        ks = tmpdb.allKeys()
+        if ks == None or len(ks) < 1:
+            tmpdb.inset('1', jstr)
+        else:
+            key = len(ks) + 1
+            tmpdb.inset(str(key),jstr)
+
+    #试用用户使用硬件唯一ID保存下载的视频
+    def addUserDBWithTestSoftID(self,hardID,purl):
+        tusrdat = self.testdb.select(hardID)
         isTooLong = False
         if tusrdat != None:
             plist = json.loads(tusrdat)
@@ -54,12 +70,13 @@ class UserDBTool(object):
                 isTooLong = True
                 plist = plist[-5:]
                 savestr = json.dumps(plist)
-                self.testdb.inset(softID, savestr)
+                self.testdb.inset(hardID, savestr)
             else:
                 savestr = json.dumps(plist)
-                self.testdb.inset(softID, savestr)
+                self.testdb.inset(hardID, savestr)
         return isTooLong
 
+    #批量保存正式用户下载地址
     def addUserListDBWithRegCode(self,regCode,purls):
         tmpdb = dbTool.DBMObj(self.userpth + os.sep + regCode)
         keys = []
@@ -91,7 +108,7 @@ class UserDBTool(object):
 
 
 if __name__ == '__main__':
-    regtool = RegistTool()
+    regtool = UserDBTool()
     keys = regtool.createRegistCode()
     print keys
 

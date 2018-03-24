@@ -22,25 +22,29 @@ class RegKeysTool(object):
         if not os.path.exists(dbpth):
             os.mkdir(dbpth)
 
+
+        #已付费注册用户
         self.dbPth = dbpth + os.sep + 'regcode'
         self.db = dbTool.DBMObj(self.dbPth)
-        self.regCodeObj = {}        #{regCode:{主板编号，操作系统ID,硬盘码,mac地址,cpu编号,操作系统信息,软件唯一ID,注册时间,注册码生成批号}}
+        # self.regCodeObj = {}        #{regCode:{UUID:{硬件唯一码},os:{操作系统信息},hard:{硬件信息}}}
 
+
+        #新生成的未使用注册码
         self.creagedbpth = dbpth + os.sep + 'create'
         self.createdb = dbTool.DBMObj(self.creagedbpth)
 
-        self.initRegCodeObj()
+        # self.initRegCodeObj()
 
 
-    def initRegCodeObj(self):
-        self.regCodeObj = self.db.getDBDatas()
+    # def initRegCodeObj(self):
+        # self.regCodeObj = self.db.getDBDatas()
 
     #获取所有未使用的注册码
     def getNoAllRegCode(self):
         noregs = self.createdb.allKeys()
         return noregs
 
-    #硬件注册
+    #注册码和硬件注册
     def addHardMsgToRegDB(self,regCode,hardDic):
         tmpd = {}
         ctmp = self.createdb.select(regCode)
@@ -55,7 +59,7 @@ class RegKeysTool(object):
             return True
         else:
             return False
-
+    #获取注册硬件信息
     def getRegCodeData(self,regCode):
         dat = self.db.select(regCode)
         if dat != None:

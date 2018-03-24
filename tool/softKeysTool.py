@@ -38,7 +38,7 @@ class SoftKeysTool(object):
         ostr = str(d1) + str(d2) + str(d3) + str(d4)
         return ostr
 
-    #生成新的注册码
+    #生成新的软件唯一码
     def createSoftID(self):
         tlen = len(self.db.allKeys())
         sendtmp = str(time.time())
@@ -48,6 +48,7 @@ class SoftKeysTool(object):
         bastr = base58.b58encode_int(num)
         return bastr
 
+    #记录用户硬件和操作系统信息
     def addHardAndOSmsg(self,userhardmsg):
         nkey = self.createSoftID()
         if type(userhardmsg) == str:
@@ -55,7 +56,8 @@ class SoftKeysTool(object):
         else:
             strtmp = json.dumps(userhardmsg)
             self.db.inset(nkey, strtmp)
-        
+        return nkey
+    #通过软件唯一码获取用户硬件和操作系统信息
     def getHardAndOsMsgWithSoftID(self,softID):
         strdat = self.db.select(softID)
         if strdat != None:

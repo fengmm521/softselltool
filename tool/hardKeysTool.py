@@ -25,92 +25,56 @@ class hardKeysTool(object):
         if not os.path.exists(self.dbPth):
             os.mkdir(self.dbPth)
 
-        #主板
-        self.mainboarddbpth     =   self.dbPth + os.sep + 'mainboard'
-        self.mainboarddb        =   dbTool.DBMObj(self.mainboarddbpth)    
-        self.mainboardKeyObj    =   {}#{'hardmsg':'','regcode':'','osmsg':'','logintimes':0,'usedtimes':}     #主板编号数据对象{硬件信息,注册码,操作系统信息}
-
-        #操作系统
-        self.osIDdbpth          =   self.dbPth + os.sep + 'osID' 
-        self.osIDdb             =   dbTool.DBMObj(self.osIDdbpth)   
-        self.osIDKeyObj         =   {}#{'hardmsg':'','regcode':'','osmsg':''}     #操作系统唯一编号{硬件信息,注册码,操作系统信息}
-
-        #硬盘
-        self.hardDiskdbpth      =   self.dbPth + os.sep + 'harddisk' 
-        self.hardDiskdb         =   dbTool.DBMObj(self.hardDiskdbpth)  
-        self.hardDiskKeyObj     =   {}#{'hardmsg':'','regcode':'','osmsg':''}     #硬盘编号{硬件信息,注册码,操作系统信息}
-
-        #网卡
-        self.netCarddbpth       =   self.dbPth + os.sep + 'netcard' 
-        self.netCarddb          =   dbTool.DBMObj(self.netCarddbpth) 
-        self.netCardKeyObj      =   {}#{'hardmsg':'','regcode':'','osmsg':''}     #网卡MAC地址编号{硬件信息,注册码,操作系统信息}        
+        #用户硬件信息,使用硬件唯一uuid作为key
+        self.hardDBpth     =   self.dbPth + os.sep + 'hard'
+        self.hardDB        =   dbTool.DBMObj(self.hardDBpth)    
         
-        #处理器
-        self.cpudbpth           =   self.dbPth + os.sep + 'cpu' 
-        self.cpudb              =   dbTool.DBMObj(self.cpudbpth) 
-        self.CPUIDKeyObj        =   {}#{cpuid:{'hardmsg':'','regcode':'','osmsg':''}}     #CPU型号编码{硬件信息,注册码,操作系统信息}
-        
-        self.initAllOBJ()
-
-    def initAllOBJ(self):
-        self.mainboardKeyObj = self.mainboarddb.getDBDatas()
-        self.osIDKeyObj = self.osIDdb.getDBDatas()
-        self.hardDiskKeyObj = self.hardDiskdb.getDBDatas()
-        self.netCardKeyObj = self.netCarddb.getDBDatas()
-        self.CPUIDKeyObj = self.cpudb.getDBDatas()
-        
-    def getCPUMsgFromDB(self,cpuid):
-        if cpuid in self.CPUIDKeyObj:
-            return self.CPUIDKeyObj[cpuid]
-        else:
-            return None
+        #用户硬件登陆次数
+        self.loginTimesPth = self.dbPth + os.sep + 'hardloginTimes'
+        self.loginDB       =   dbTool.DBMObj(self.loginTimesPth)   
 
 
-    def getMainBoardMsgFromDB(self,mainboardID):
-        if mainboardID in self.mainboardKeyObj:
-            return self.mainboardKeyObj[mainboardID]
-        else:
-            return None
+    def addHardMsgToDB(self,hardMsg):
+        nkey = hardMsg['userHardID']
+        jstrmsg = json.dumps(hardMsg)
+        self.hardDB.inset(nkey, jstrmsg)
+        return nkey
 
-    def getOSIDFromDB(self,osID):
-        if osID in self.osIDKeyObj:
-            return self.osIDKeyObj[osID]
-        else:
-            return None
-
-    def getHardDiskFromDB(self,harddiskID):
-        if harddiskID in self.hardDiskKeyObj:
-            return self.hardDiskKeyObj[harddiskID]
-        else:
-            return None
-
-    def getNetCardFromDB(self,macaddrID):
-        if macaddrID in self.netCardKeyObj:
-            return self.netCardKeyObj[macaddrID]
-        else:
-            return None
-
-    #从用户上传的硬件信息中获取各数据库ID
-    def getIDFromUserHardMsg(self,userHardMsg):
-        tmpdic = {}
-        #cpu
-        #mainboard
-        #os
-        #netcard
-        #disk
-        return tmpdic
+    def getHardMsg(self,hardID):
+        dat = self.hardDB.select(hardID)
+        out = None
+        if dat and dat != None:
+            out = json.loads(dat)
+        return out
     
     #为一个硬件设备数据库增加注册码
-    def setResCodeWithHardMsg(self,userHardMsg,resCode):
-        pass
+    def setResCodeWithHardMsg(self,hardMsg,resCode):
+        tmphardMsg = hardMsg
+        tmphardMsg['reg'] = resCode
+        hkey = self.addHardMsgToDB(tmphardMsg)
+        return hkey,resCode
     #查看一个硬件是否已注册过，
     #如果未注册且未登陆过，则增加一个新硬件信息，如果未注册过但已有该硬件，则登陆次数加1，并调用一次试用次数加1
-    def checkHardHeaveResCode(self,userHardMsg):
-        hdic = self.getIDFromUserHardMsg(userHardMsg)
+    def getHardHeaveResCode(self,hardMsg):
+        hardID = hardMsg['userHardID']
+        dat = self.getHardMsg(hardID)
+        if dat and dat != None:
+            if 'reg' in dat:
+                return dat['reg']
+        return None
 
-    #为一个硬件增加一次使用次数,这里只作记录不作限制,限制试用次数由试用下载库对象libMangertool决定
-    def addOnceUsedTimes(self,hdic):
-        pass
+    #为一个硬件增加一次使用次数,返回用户登陆次数
+    def hardLogin(self,hardID):
+        dat = self.loginDB.select(hardID)
+        dattmp = {}
+        if dat and dat!= None:
+            dattmp = json.loads(dat)
+            dattmp['logintimes'] += 1
+        else:
+            dattmp = {'logintimes':1}
+        out = json.dumps(dattmp)
+        self.loginDB.inset(hardID, out)
+        return dattmp['logintimes']
 
 if __name__ == '__main__':
     hardtool = hardKeysTool()

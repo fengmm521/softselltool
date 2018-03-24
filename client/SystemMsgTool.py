@@ -36,10 +36,12 @@ class SystemMsgObj(object):
             self.ver = platform.linux_distribution()
         self.c = None
         self.sysMsg = {}
-        self.sysMsg['osversion'] = str(self.sysversion)
-        self.sysMsg['osplatform'] = str(self.sysplatform)
-        self.sysMsg['os'] = str(self.sysSystem)
-        self.sysMsg['ver'] = self.ver
+        osMsg = {}
+        osMsg['osversion'] = str(self.sysversion)
+        osMsg['osplatform'] = str(self.sysplatform)
+        osMsg['os'] = str(self.sysSystem)
+        osMsg['ver'] = self.ver
+        self.sysMsg['os'] = osMsg
         self.sysMsg['ostype'] = self.ostype
         if self.ostype == 1:
             import wmi
@@ -196,7 +198,12 @@ class SystemMsgObj(object):
         result = _winreg.QueryValueEx(key, "MachineGuid")
         self.sysMsg['machineGuid'] = result[0].lower()
 
+ostmp = SystemMsgObj()
 
+def getHardMsg():
+    return ostmp.getSysMsg()
+
+    
 def main():
     import json
     ostmp = SystemMsgObj()
