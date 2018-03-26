@@ -21,17 +21,34 @@ Host = 'https://sell1.woodcol.com:4443/'
 
 class CreateKeyTool(object):
     """docstring for ClientRegTool"""
-    def __init__(self,savePth = './youtubekey/out'):
+    def __init__(self,savePth = './youtubekey'):
         super(CreateKeyTool, self).__init__()
-        self.keysavePth = savePth
+        self.keysavePth = savePth + os.sep +'out'
+        self.key1kapth = savePth + os.sep +'1ka'
+        if not os.path.exists(self.key1kapth):
+            os.mkdir(self.key1kapth)
+        if not os.path.exists(self.keysavePth):
+            os.mkdir(self.keysavePth) 
 
     def saveNewKeyToFile(self,keystr):
+
+        fname = str(time.strftime("%Y-%m-%d_%H%M%S",time.localtime()))
         
-        fpth = self.keysavePth + os.sep + str(time.strftime("%Y-%m-%d_%H%M%S",time.localtime())) + '.txt'
+        fpth = self.keysavePth + os.sep + fname + '.txt'
         keys = json.loads(keystr)
         outstr = ''
         for k in keys:
             outstr += k + '\n'
+        outstr = outstr[:-1]
+        f = open(fpth,'w')
+        f.write(outstr)
+        f.close()
+
+        fpth = self.key1kapth + os.sep + fname + '.txt'
+        keys = json.loads(keystr)
+        outstr = ''
+        for k in keys:
+            outstr += k + ','
         outstr = outstr[:-1]
         f = open(fpth,'w')
         f.write(outstr)
