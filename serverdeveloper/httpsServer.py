@@ -51,7 +51,6 @@ from servertool import libMangeTool
 
 userdbtoolobj = UserDBTool.UserDBTool()
 regKeysToolObj = regKeysTool.RegKeysTool()
-softKeysToolObj = softKeysTool.SoftKeysTool()
 hardKeysToolObj = hardKeysTool.hardKeysTool()
 
 
@@ -120,7 +119,6 @@ class myHandler(BaseHTTPRequestHandler):
     def registClient(self,hardMsgObj):
         regID = hardMsgObj['regID']
         hardID = hardMsgObj['HardID']
-        softID = hardMsgObj['softID']
         isOK = regKeysToolObj.addHardMsgToRegDB(regID, hardMsgObj)
         if isOK:
             backdic = {}
@@ -142,11 +140,10 @@ class myHandler(BaseHTTPRequestHandler):
     def checkClient(self,hardMsgObj):
         regID = hardMsgObj['regID']
         hardID = hardMsgObj['HardID']
-        softID = hardMsgObj['softID']
         hardtmp = regKeysToolObj.getRegCodeData(regID)
-        print(hardtmp)
-        print(type(hardtmp))
-        print(type(hardtmp['hard']))
+        # print(hardtmp)
+        # print(type(hardtmp))
+        # print(type(hardtmp['hard']))
         if hardtmp != None and hardtmp['hard']['HardID'] == hardID:
             #软件已注册过
             if 'getCode' in hardMsgObj:   #是否请求加密代码
@@ -188,8 +185,7 @@ class myHandler(BaseHTTPRequestHandler):
         hardID = msgObj['HardID']
         purl = msgObj['url']
         count = userdbtoolobj.addUserDBWithRegCode(hardID, purl)
-        regCode = hardKeysToolObj.getHardHeaveResCode(hardID)
-        if regCode != None and len(regCode) < 5 and count > UserDBTool.MAXTESTCOUNT:
+        if msgObj['isTrail'] == 1 and count > UserDBTool.MAXTESTCOUNT: #加上这个可以减少服务器读取数据库的操作
             backdic = {}
             backdic['erro'] = 1
             backdic['code'] = ''
@@ -198,14 +194,24 @@ class myHandler(BaseHTTPRequestHandler):
             outstr = json.dumps(backdic)
             self.sendMsg(outstr)
         else:
-            backdic = {}
-            backdic['erro'] = 0
-            backdic['reskey'] = ''
-            backdic['code'] = ''
-            backdic['count'] = count
-            backdic['msg'] = ''
-            outstr = json.dumps(backdic)
-            self.sendMsg(outstr)
+            regCode = hardKeysToolObj.getHardHeaveResCode(hardID)
+            if regCode != None and len(regCode) < 5 and count > UserDBTool.MAXTESTCOUNT:
+                backdic = {}
+                backdic['erro'] = 1
+                backdic['code'] = ''
+                backdic['count'] = count            #使用硬件码+特殊字符串对试用代码进行AES加密
+                backdic['msg'] = '软件未注册可试用%d次'%(UserDBTool.MAXTESTCOUNT)
+                outstr = json.dumps(backdic)
+                self.sendMsg(outstr)
+            else:
+                backdic = {}
+                backdic['erro'] = 0
+                backdic['reskey'] = ''
+                backdic['code'] = ''
+                backdic['count'] = count
+                backdic['msg'] = ''
+                outstr = json.dumps(backdic)
+                self.sendMsg(outstr)
 
     def cleintPublicKey(self,publickey):
         pass

@@ -26,13 +26,18 @@ class ClientRegTool(object):
     """docstring for ClientRegTool"""
     def __init__(self):
         super(ClientRegTool, self).__init__()
+        self.clienDataPth = 'data' + os.sep + 'client.dat'
+
         aeskey = self.getAESKey()
         self.aesobj = AEStool.prpcrypt(aeskey)
+        codeAESKey = self.getCodeAESKey()
+        self.aesCodeObj = AEStool.prpcrypt(codeAESKey)   #试用时使用的加密方法
         self.softID = ''
         if not os.path.exists('data'):
             os.mkdir('data')
-        self.clienDataPth = 'data' + os.sep + 'client.dat'
+        
         self.isTrail = True
+        self.getIsTrailFromClient()
 
     def saveMsgToClientObj(self,key,strmsg):
         clientobj = {}
@@ -63,10 +68,14 @@ class ClientRegTool(object):
                 return clientobj[key]
         return ''
 
-    def saveAESKeyToclient(self,softID):
-        self.saveMsgToClientObj('softID',softID)
-    def getAESKeyFromClient(self):
-        self.getMsgFromClientObj('softID')
+    def saveIsTrailToclient(self):
+        self.saveMsgToClientObj('isTrail',str(int(self.isTrail)))
+    def getIsTrailFromClient(self):
+        tmpstr = self.getMsgFromClientObj('isTrail')
+        if tmpstr == '0' or tmpstr == '':
+            self.isTrail = False
+        else:
+            self.isTrail = True
 
     def saveDataToClient(self,fname,data):
         fpth = 'data' + os.sep + fname
@@ -91,6 +100,17 @@ class ClientRegTool(object):
     def getAESKey(self):
         harddic = self.getSystemMsg()
         hardIDtmp = harddic['HardID'] + 'woodcol.com'
+        hexstr = hashlib.sha256(hardIDtmp).hexdigest()
+        result = bytearray.fromhex(hexstr)
+        if len(result) >= 128:
+            return result[:128]
+        else:
+            return None
+
+    def getCodeAESKey(self):
+        harddic = self.getSystemMsg()
+        regID = self.getMsgFromClientObj('regID')
+        hardIDtmp = harddic['HardID'] + 'code.woodcol.com' + regID
         hexstr = hashlib.sha256(hardIDtmp).hexdigest()
         result = bytearray.fromhex(hexstr)
         if len(result) >= 128:
@@ -158,12 +178,10 @@ class ClientRegTool(object):
             print(e)
         return None
 
-    
 
     def trail(self,isTest = False):
         harddic = self.getSystemMsg()
         harddic['regID'] = ''
-        harddic['softID'] = self.getSoftIDFromClient()
         dat = json.dumps(harddic)
         res = self.postDataToURL('trail',dat,isTest)
         bdic = json.loads(res)
@@ -176,13 +194,17 @@ class ClientRegTool(object):
             return
         harddic = self.getSystemMsg()
         harddic['regID'] = regCodeID
-        harddic['softID'] = self.softID
         dat = json.dumps(harddic)
         res = self.postDataToURL('bind',dat,isTest)
         bdic = json.loads(res)
         print(bdic['erro'])
         print(bdic['msg'])
-        code = bdic['code']
+
+        if bdic['erro'] == 0:
+            self.isTrail = False
+            self.saveIsTrailToclient()
+            code = bdic['code']
+
 
 
     def check(self,regCodeID = None,isTest = False):
@@ -191,7 +213,6 @@ class ClientRegTool(object):
             harddic['regID'] = regCodeID
         else:
             harddic['regID'] = self.getMsgFromClientObj('regID')
-        harddic['softID'] = self.softID
         dat = json.dumps(harddic)
         res = self.postDataToURL('check',dat,isTest)
         bdic = json.loads(res)
@@ -205,7 +226,7 @@ class ClientRegTool(object):
         harddic = {}
         harddic['HardID'] = self.getSystemMsg()['HardID']
         harddic['url'] = msg
-        harddic['isTest'] = int(self.isTrail)
+        harddic['isTrail'] = int(self.isTrail)
         dat = json.dumps(harddic)
         res = self.postDataToURL('msg',dat,isTest)
         bdic = json.loads(res)
