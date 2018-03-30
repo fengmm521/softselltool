@@ -1,3 +1,9 @@
 
 *.pyc
 *.pem
+clientdeveloper/ffmpeg_win32/ffmpeg.exe
+*.exe
+clientdeveloper/ffmpeg_mac/ffmpeg
+clientdeveloper/audio
+clientdeveloper/tmp
+clientdeveloper/data

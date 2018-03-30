@@ -47,7 +47,7 @@ from servertool import hardKeysTool
 from servertool import regKeysTool
 from servertool import softKeysTool
 from servertool import UserDBTool
-from servertool import libMangeTool
+from servertool import AEStool
 
 userdbtoolobj = UserDBTool.UserDBTool()
 regKeysToolObj = regKeysTool.RegKeysTool()
@@ -63,11 +63,69 @@ def getCreateKey():
 
 createKey = getCreateKey()
 
+
+def getCodeFromFile(fpth):
+    if not os.path.exists(fpth):
+        return ''
+    else:
+        f = open(fpth,'r')
+        out = f.read()
+        f.close()
+        return str(out)
+
+userTrailCode = getCodeFromFile('./downtooltrail.py')
+
+userRegCode = getCodeFromFile('./downtool.py')
+
+userClientToolCode = getCodeFromFile('./clientRegTool.py')
+
+# print(userRegCode)
+# print(type(userRegCode))
+def getAESCodeTrail(hardID):
+    hardIDtmp = hardID + 'code.woodcol.com'
+    hexstr = hashlib.sha256(hardIDtmp).hexdigest()
+    result = bytearray.fromhex(hexstr)
+    aeskey = bytes(result)
+    aesobj = AEStool.prpcrypt(aeskey)
+    aescode = aesobj.encrypt(userTrailCode)
+    b64str = base64.b64encode(aescode)
+    return b64str
+
+def getADSCodeRegUser(hardID,regID):
+    hardIDtmp = hardID + 'code.woodcol.com' + regID
+    print(hardIDtmp)
+    hexstr = hashlib.sha256(hardIDtmp).hexdigest()
+    result = bytearray.fromhex(hexstr)
+    aeskey = bytes(result)
+    aesobj = AEStool.prpcrypt(aeskey)
+    aescode = aesobj.encrypt(userRegCode)
+    b64str = base64.b64encode(aescode)
+    return b64str
+
+def getAESClientToolCode(hardID):
+    hardIDtmp = hardID + 'clientcode.woodcol.com'
+    print(hardIDtmp)
+    hexstr = hashlib.sha256(hardIDtmp).hexdigest()
+    result = bytearray.fromhex(hexstr)
+    aeskey = bytes(result)
+    aesobj = AEStool.prpcrypt(aeskey)
+    aescode = aesobj.encrypt(userClientToolCode)
+    b64str = base64.b64encode(aescode)
+    return b64str
+
+
 class myHandler(BaseHTTPRequestHandler):
+    def sendClientRegToolCode(self,hardMsgObj):
+        hardID = hardMsgObj['HardID']
+        backdic = {}
+        backdic['code'] = getAESClientToolCode(hardID)            #使用硬件码+特殊字符串对试用代码进行AES加密
+        outstr = json.dumps(backdic)
+        self.sendMsg(outstr)
 
     def hardLogin(self,hardMsgObj):
         isReg = False
         hardID = hardMsgObj['HardID']
+        regIDCOde = ''
         hardobj = hardKeysToolObj.getHardMsg(hardID)
         if hardobj != None:
             if len(hardobj['regID']) <5:
@@ -79,6 +137,7 @@ class myHandler(BaseHTTPRequestHandler):
                 if hardtmp != None and hardtmp['hard']['HardID'] == hardobj['HardID']:
                     #软件已注册过
                     isReg = True
+                    regIDCOde = regid
                 else:
                     hardMsgObj['regID'] = ''
                     hardKeysToolObj.addHardMsgToDB(hardMsgObj)
@@ -88,7 +147,8 @@ class myHandler(BaseHTTPRequestHandler):
             if 'getCode' in hardMsgObj: #是否请求加密代码
                 backdic = {}
                 backdic['erro'] = 0
-                backdic['code'] = ''    #使用注册码+硬件码+特殊字符串对代码进行AES加密
+                backdic['regID'] = regIDCOde
+                backdic['code'] = getADSCodeRegUser(hardID,regIDCOde)    #使用注册码+硬件码+特殊字符串对代码进行AES加密
                 backdic['msg'] = ''#isOK
                 outstr = json.dumps(backdic)
                 self.sendMsg(outstr)
@@ -103,7 +163,7 @@ class myHandler(BaseHTTPRequestHandler):
             if 'getCode' in hardMsgObj: #是否请求加密代码
                 backdic = {}
                 backdic['erro'] = 1
-                backdic['code'] = 'codecodecode'  #使用硬件码+特殊字符串对试用代码进行AES加密
+                backdic['code'] = getAESCodeTrail(hardID)  #使用硬件码+特殊字符串对试用代码进行AES加密
                 backdic['msg'] = '软件未注册可试用%d次'%(UserDBTool.MAXTESTCOUNT)
                 outstr = json.dumps(backdic)
                 self.sendMsg(outstr)
@@ -123,7 +183,7 @@ class myHandler(BaseHTTPRequestHandler):
         if isOK:
             backdic = {}
             backdic['erro'] = 0
-            backdic['code'] = 'codecodecode'    ##使用注册码+硬件码+特殊字符串对代码进行AES加密
+            backdic['code'] = getADSCodeRegUser(hardID,regID)    ##使用注册码+硬件码+特殊字符串对代码进行AES加密
             backdic['msg'] = '软件注册成功，谢谢使用，如有问题可联系QQ:1983246448'
             outstr = json.dumps(backdic)
             hardKeysToolObj.setResCodeWithHardMsg(hardMsgObj, regID)
@@ -149,7 +209,7 @@ class myHandler(BaseHTTPRequestHandler):
             if 'getCode' in hardMsgObj:   #是否请求加密代码
                 backdic = {}
                 backdic['erro'] = 0
-                backdic['code'] = 'codecodecode'  #使用注册码+硬件码+特殊字符串对代码进行AES加密
+                backdic['code'] = getADSCodeRegUser(hardID,regID)  #使用注册码+硬件码+特殊字符串对代码进行AES加密
                 backdic['msg'] = ''#isCheckOK
                 outstr = json.dumps(backdic)
                 self.sendMsg(outstr) 
@@ -167,7 +227,7 @@ class myHandler(BaseHTTPRequestHandler):
             if 'getCode' in hardMsgObj:   #是否请求加密代码
                 backdic = {}
                 backdic['erro'] = 1
-                backdic['code'] = 'codecodecode'    #使用硬件码+特殊字符串对试用代码进行AES加密
+                backdic['code'] = getAESCodeTrail(hardID)    #使用硬件码+特殊字符串对试用代码进行AES加密
                 backdic['msg'] = '软件未注册可试用%d次'%(UserDBTool.MAXTESTCOUNT)
                 outstr = json.dumps(backdic)
                 self.sendMsg(outstr) 
@@ -184,21 +244,22 @@ class myHandler(BaseHTTPRequestHandler):
     def saveDownloadURL(self,msgObj):
         hardID = msgObj['HardID']
         purl = msgObj['url']
-        count = userdbtoolobj.addUserDBWithRegCode(hardID, purl)
+        if type(purl) == list:
+            count = userdbtoolobj.addUserListDBWithRegCode(hardID, purl)
+        else:
+            count = userdbtoolobj.addUserDBWithRegCode(hardID, purl)
         if msgObj['isTrail'] == 1 and count > UserDBTool.MAXTESTCOUNT: #加上这个可以减少服务器读取数据库的操作
             backdic = {}
             backdic['erro'] = 1
-            backdic['code'] = ''
             backdic['count'] = count            #使用硬件码+特殊字符串对试用代码进行AES加密
             backdic['msg'] = '软件未注册可试用%d次'%(UserDBTool.MAXTESTCOUNT)
             outstr = json.dumps(backdic)
             self.sendMsg(outstr)
         else:
             regCode = hardKeysToolObj.getHardHeaveResCode(hardID)
-            if regCode != None and len(regCode) < 5 and count > UserDBTool.MAXTESTCOUNT:
+            if regCode == None or (len(regCode) < 5 and count > UserDBTool.MAXTESTCOUNT):
                 backdic = {}
                 backdic['erro'] = 1
-                backdic['code'] = ''
                 backdic['count'] = count            #使用硬件码+特殊字符串对试用代码进行AES加密
                 backdic['msg'] = '软件未注册可试用%d次'%(UserDBTool.MAXTESTCOUNT)
                 outstr = json.dumps(backdic)
@@ -206,13 +267,12 @@ class myHandler(BaseHTTPRequestHandler):
             else:
                 backdic = {}
                 backdic['erro'] = 0
-                backdic['reskey'] = ''
-                backdic['code'] = ''
                 backdic['count'] = count
                 backdic['msg'] = ''
                 outstr = json.dumps(backdic)
                 self.sendMsg(outstr)
 
+    
     def cleintPublicKey(self,publickey):
         pass
 
@@ -257,6 +317,15 @@ class myHandler(BaseHTTPRequestHandler):
                 self.wfile.write(f.read())  
                 f.close()  
                 return
+            elif self.path.endswith(".png"):
+                mimetype = 'image/png'
+                f = open('./store/image.png', 'rb')  
+                self.send_response(200)  
+                self.send_header('Content-type',mimetype)  
+                self.end_headers()  
+                self.wfile.write(f.read())  
+                f.close()  
+                return 
             #客户端请求服务器公钥
             elif self.path.endswith(".pem"):
                 mimetype = 'application/text'
@@ -283,6 +352,8 @@ class myHandler(BaseHTTPRequestHandler):
             if self.path[1:6] == 'trail':    #1.client试用登陆
                 print('trail---->',self.path)
                 return 'trail'
+            elif self.path[1:5] == 'code':
+                return 'code'
             elif self.path[1:5] == 'bind':   #2.client绑定注册码和硬件码
                 print('bind---->',self.path)
                 return 'bind'
@@ -358,6 +429,9 @@ class myHandler(BaseHTTPRequestHandler):
         elif reqtype == 'selled':
             print('易卡有卡密已出售')
 
+        elif reqtype == 'code':
+            print('获取客户端程序')
+            self.sendClientRegToolCode(msgobj)
         elif reqtype == 'mycreate':
             print('手动请求生成卡密')
             if msgobj['key'] == createKey:

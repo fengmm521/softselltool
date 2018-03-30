@@ -50,7 +50,6 @@ class DBMObj(object):
             return False
 
     def delet(self,key):
-        print(self.dbpth)
         db = dbm.open(self.dbpth, 'c')
         if key in db:
             del db[key]

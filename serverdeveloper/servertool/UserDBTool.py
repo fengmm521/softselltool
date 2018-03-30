@@ -117,7 +117,10 @@ class UserDBTool(object):
                 base64str = base64.b64encode(purls[n])
                 values.append(base64str)
             tmpdb.insetList(keys, values)
-            return len(keys) + len(ks)
+            if ks == None:
+                return len(keys)
+            else:
+                return len(keys) + len(ks)
 
     #使用硬件ID保存正式用户下载URL
     def addUserDBWithRegCode(self,hardID,purl):
@@ -134,13 +137,15 @@ class UserDBTool(object):
             keys.append('801')
             values.append(base64str)
             tmpdb.insetList(keys, values)
+            return len(ks) + 1
         else:
             if ks == None or len(ks) < 1:
                 tmpdb.inset('1', base64str)
+                return 1
             else:
                 key = len(ks) + 1
                 tmpdb.inset(str(key),base64str)
-        return len(ks) + 1
+                return len(ks) + 1
 
 
 

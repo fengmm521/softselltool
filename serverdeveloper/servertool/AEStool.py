@@ -13,8 +13,9 @@ class prpcrypt():
     def __init__(self,key):
         self.key = key
         self.mode = AES.MODE_CBC
-        # self.cryptor = AES.new(self.key,self.mode,b'0000000000000000')
-            #加密函数，如果text不足16位就用空格补足为16位，
+        for i in self.key:
+            print(ord(i))
+    #加密函数，如果text不足16位就用空格补足为16位，
     #如果大于16当时不是16的倍数，那就补足为16的倍数。
     def encrypt(self,text):
         cryptor = AES.new(self.key,self.mode,b'0000000000000000')
@@ -37,7 +38,6 @@ class prpcrypt():
      
     #解密后，去掉补足的空格用strip() 去掉
     def decrypt(self,text):
-
         cryptor = AES.new(self.key,self.mode,b'0000000000000000')
         plain_text  = cryptor.decrypt(a2b_hex(text))
         return plain_text.rstrip(b'\0')
