@@ -15,6 +15,10 @@ import zlib
 import hashlib
 import base64
 
+import platform
+
+sysSystem = platform.system()
+
 
 testHost = 'https://192.168.123.200:4443/'
 Host = 'https://sell1.woodcol.com:4443/'
@@ -129,11 +133,29 @@ class CreateKeyTool(object):
         keys = json.loads(res)
         self.saveNewKeyToFile(keys)
 
-def main():
+    def openKeyDir(self):
+        if sysSystem == 'Windows':  
+            os.startfile('./youtubekey')
+        elif sysSystem == 'Darwin':
+            cmd = 'open %s'%('./youtubekey')
+            os.system(cmd)
+        elif sysSystem == 'Linux':
+            cmd = 'xdg-open %s'%('./youtubekey')
+            os.system(cmd)
+            
+
+def main(arg):
     createobj = CreateKeyTool()
-    createobj.createKeys(count = 10,isTest = True)
+    if len(arg) == 2:
+        createobj.createKeys(count = int(arg[1]),isTest = False)
+    elif len(arg) == 3:
+        createobj.createKeys(count = int(arg[1]),isTest = bool(arg[2]))
+    else:
+        createobj.createKeys(count = 10,isTest = False)
     time.sleep(0.5)
+    createobj.openKeyDir()
 
 
 if __name__ == '__main__':
-    main()
+    arg = sys.argv
+    main(arg)
