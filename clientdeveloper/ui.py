@@ -95,11 +95,11 @@ class UITool ( wx.Frame ):
         self.isOKYoutube = False
 
         try:
-            self.updateObj = updatetool.UpdateTool(isDebug = True)
+            self.updateObj = updatetool.UpdateTool(isDebug = False)
 
             # self.clientRegObj = clientRegTool.ClientRegTool(isDebug = True)
             clientRegTool = self.updateObj.getClientRegTool()
-            self.clientRegObj = clientRegTool.ClientRegTool(isDebug = True)
+            self.clientRegObj = clientRegTool.ClientRegTool(isDebug = False)
 
             self.downcount = self.clientRegObj.getDownCount()
             
