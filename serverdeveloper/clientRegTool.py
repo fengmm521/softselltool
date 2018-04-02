@@ -171,7 +171,7 @@ class ClientRegTool(object):
     def _decompress(self,dat):
         msg = zlib.decompress(dat)
         # print('ziplen-de-->',len(dat),len(msg))
-        print('正在解压数据...')
+        print('正在解压数据...'.decode())
         return msg
 
 
@@ -179,7 +179,7 @@ class ClientRegTool(object):
         rurl = self.Host + purl
         cdata = self._compress(data)
         # print rurl
-        print('正在请求数据...')
+        print('正在请求数据...'.decode())
         response = requests.post(rurl,data=cdata,verify=False)
         dat = response.text
         if len(dat) > 0:
