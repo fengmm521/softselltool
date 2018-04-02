@@ -71,8 +71,8 @@ def main():
     loadtool = LoadModeTool(None)
     m = loadtool.loadModeFromFile()
     if m:
-        print(m.pyctest())
-        print(m.xxx)
+        # print(m.pyctest())
+        # print(m.xxx)
 
         testobj = m.TESTObj('hahaha')
         testobj.showP()

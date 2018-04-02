@@ -29,6 +29,8 @@ import updatetool
 
 import NetWorkTest
 
+import pytube
+
 
 
 reload(sys)
@@ -94,8 +96,8 @@ class UITool ( wx.Frame ):
 
         self.isOKYoutube = False
 
-        # try:
-        if True:
+        try:
+        # if True:
             self.updateObj = updatetool.UpdateTool(isDebug = False)
 
             # self.clientRegObj = clientRegTool.ClientRegTool(isDebug = True)
@@ -124,11 +126,13 @@ class UITool ( wx.Frame ):
 
             self.downtool.msgtool.setUIObj(self)
 
-        # except Exception as e:
-        #     self.savePth = ''
-        #     self.isShowTrail = False
+            self.isWinSystem = self.downtool.isWinSystem
 
-        
+        except Exception as e:
+            self.savePth = ''
+            self.isShowTrail = False
+
+        print(os.getcwd())
 
         self.count = 0
         self.gaugeValueStart = 0
@@ -139,7 +143,7 @@ class UITool ( wx.Frame ):
             self.savePth = f.read()
             f.close()
 
-        self.isWinSystem = self.downtool.isWinSystem
+        
 
         self.queue = Queue.Queue()
             

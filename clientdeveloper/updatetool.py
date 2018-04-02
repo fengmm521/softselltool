@@ -51,26 +51,27 @@ class UpdateTool(object):
 
     def getAESKey(self):
         hardIDtmp = self.hardmsg['HardID'] + 'clientcode.woodcol.com'
-        print(hardIDtmp)
         hexstr = hashlib.sha256(hardIDtmp).hexdigest()
         result = bytearray.fromhex(hexstr)
         return bytes(result)
     #压缩
     def _compress(self,msg):
         dat = zlib.compress(msg, zlib.Z_BEST_COMPRESSION)
-        print('ziplen-co-->',len(msg),len(dat))
+        # print('ziplen-co-->',len(msg),len(dat))
         return dat
 
     #解压缩
     def _decompress(self,dat):
         msg = zlib.decompress(dat)
-        print('ziplen-de-->',len(dat),len(msg))
+        # print('ziplen-de-->',len(dat),len(msg))
+        print('正在解压数据...')
         return msg
 
     def postDataToURL(self,purl,data):
         rurl = self.Host + purl
         cdata = self._compress(data)
-        print rurl
+        # print rurl
+        print('正在获取数据...')
         response = requests.post(rurl,data=cdata,verify=False)
         dat = response.text
         if len(dat) > 0:
