@@ -157,27 +157,29 @@ class ClientRegTool(object):
         else:
             tmpRegID = self.getMsgFromClientObj('regID')
         hardIDtmp = harddic['HardID'] + 'code.woodcol.com' + tmpRegID
-        print(hardIDtmp)
+        # print(hardIDtmp)
         hexstr = hashlib.sha256(hardIDtmp).hexdigest()
         result = bytearray.fromhex(hexstr)
         return bytes(result)
     #压缩
     def _compress(self,msg):
         dat = zlib.compress(msg, zlib.Z_BEST_COMPRESSION)
-        print('ziplen-co-->',len(msg),len(dat))
+        # print('ziplen-co-->',len(msg),len(dat))
         return dat
 
     #解压缩
     def _decompress(self,dat):
         msg = zlib.decompress(dat)
-        print('ziplen-de-->',len(dat),len(msg))
+        # print('ziplen-de-->',len(dat),len(msg))
+        print('正在解压数据...')
         return msg
 
 
     def postDataToURL(self,purl,data):
         rurl = self.Host + purl
         cdata = self._compress(data)
-        print rurl
+        # print rurl
+        print('正在请求数据...')
         response = requests.post(rurl,data=cdata,verify=False)
         dat = response.text
         if len(dat) > 0:
@@ -203,11 +205,11 @@ class ClientRegTool(object):
         try:
             if purl[0:5] == 'https':
                 res = requests.get(self.purl, verify=False)
-                print(res.text)
+                # print(res.text)
                 return res.text
             else:
                 res = requests.get(self.purl)
-                print(res.text)
+                # print(res.text)
                 return res.text
         except Exception as e:
             print(e)
@@ -222,7 +224,7 @@ class ClientRegTool(object):
         dat = json.dumps(harddic)
         res = self.postDataToURL('trail',dat)
         bdic = json.loads(res)
-        print(bdic['erro'])
+        # print(bdic['erro'])
         print(bdic['msg'])
         if len(bdic['code']) > 100:
             code = bdic['code']
@@ -245,7 +247,7 @@ class ClientRegTool(object):
         dat = json.dumps(harddic)
         res = self.postDataToURL('bind',dat)
         bdic = json.loads(res)
-        print(bdic['erro'])
+        # print(bdic['erro'])
         print(bdic['msg'])
 
         if bdic['erro'] == 0:
@@ -294,9 +296,9 @@ class ClientRegTool(object):
         dat = json.dumps(harddic)
         res = self.postDataToURL('msg',dat)
         bdic = json.loads(res)
-        print(bdic['erro'],'erro')
-        print(bdic['msg'],'msg')
-        print(bdic['count'],'count')
+        # print(bdic['erro'],'erro')
+        # print(bdic['msg'],'msg')
+        # print(bdic['count'],'count')
         self.downcount = bdic['count']
         self.saveMsgToClientObj('downcount', bdic['count'])
         return bdic['erro'],self.downcount
