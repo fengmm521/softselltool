@@ -45,7 +45,6 @@ print 'setLastIP:',setLastIP
 #sell1.woodcol.com
 from servertool import hardKeysTool
 from servertool import regKeysTool
-from servertool import softKeysTool
 from servertool import UserDBTool
 from servertool import AEStool
 
@@ -397,7 +396,8 @@ class myHandler(BaseHTTPRequestHandler):
     def do_POST(self):
 
         reqtype = self.do_GET()
-        try:
+        # try:
+        if True:
             length = self.headers.getheader('content-length');
             nbytes = int(length)
             data = self.rfile.read(nbytes)
@@ -408,40 +408,43 @@ class myHandler(BaseHTTPRequestHandler):
             msgobj = json.loads(data)
             # print(msgobj)
             if reqtype == 'trail':  #硬件登陆
-                print('硬件登陆:\n硬件码:%s'%(msgobj['HardID']))
+                # print('硬件登陆:\n硬件码:%s'%(msgobj['HardID']))
                 self.hardLogin(msgobj)
 
             elif reqtype == 'bind': #用户输入注册码
-                print(msgobj['HardID'],msgobj['regID'])
-                print('绑定注册码:\n硬件码:%s\n注册码:%s'%(msgobj['HardID'],msgobj['regID']))
+                # print(msgobj['HardID'],msgobj['regID'])
+                # print('绑定注册码:\n硬件码:%s\n注册码:%s'%(msgobj['HardID'],msgobj['regID']))
                 self.registClient(msgobj)
             elif reqtype == 'check':
-                print('客户端校验身份:\n硬件码:%s\n注册码:%s'%(msgobj['HardID'],msgobj['regID']))
+                # print('客户端校验身份:\n硬件码:%s\n注册码:%s'%(msgobj['HardID'],msgobj['regID']))
                 self.checkClient(msgobj)
             elif reqtype == 'msg':
-                print('客户端提交下载地址:\n硬件码:%s\n下载地址:%s'%(msgobj['HardID'],msgobj['url']))
+                # print('客户端提交下载地址:\n硬件码:%s\n下载地址:%s'%(msgobj['HardID'],msgobj['url']))
                 self.saveDownloadURL(msgobj)
             elif reqtype == 'userPubkey': 
-                print('客户端发送自已公钥上来')
+                # print('客户端发送自已公钥上来')
+                pass
 
             elif reqtype == 'create':
-                print('易卡请求生成注册码')
+                # print('易卡请求生成注册码')
                 # self.createRegIDSFro1Ka()
+                pass
             elif reqtype == 'selled':
-                print('易卡有卡密已出售')
+                # print('易卡有卡密已出售')
+                pass
 
             elif reqtype == 'code':
-                print('获取客户端程序')
+                # print('获取客户端程序')
                 self.sendClientRegToolCode(msgobj)
             elif reqtype == 'mycreate':
-                print('手动请求生成卡密')
+                # print('手动请求生成卡密')
                 if msgobj['key'] == createKey:
                     self.creageRegIDs(msgobj['count'])
                 else:
                     time.sleep(5)
                     self.sendEmptyMsg()
-        except Exception as e:
-            self.send_error(404,'File Not Found: %s' % self.path)  
+        # except Exception as e:
+            # self.send_error(404,'File Not Found: %s' % self.path)  
     def sendEmptyMsg(self):
         self.send_response(200)
         self.send_header("Content-type", 'application/xml; encoding=utf-8')
@@ -478,11 +481,11 @@ class myHandler(BaseHTTPRequestHandler):
 
     def _compress(self,msg):
         dat = zlib.compress(msg, zlib.Z_BEST_COMPRESSION)
-        print('ziplen-co-->',len(msg),len(dat))
+        # print('ziplen-co-->',len(msg),len(dat))
         return dat
     def _decompress(self,dat):
         msg = zlib.decompress(dat)
-        print('ziplen-de-->',len(dat),len(msg))
+        # print('ziplen-de-->',len(dat),len(msg))
         return msg
 
 

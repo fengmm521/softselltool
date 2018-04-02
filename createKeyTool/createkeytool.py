@@ -34,7 +34,14 @@ class CreateKeyTool(object):
         if not os.path.exists(self.keysavePth):
             os.mkdir(self.keysavePth) 
 
-    def saveNewKeyToFile(self,keystr):
+        self.testpth = './youtubekey/test'
+        if not os.path.exists(self.testpth):
+            os.mkdir(self.testpth)
+
+    def saveNewKeyToFile(self,keystr,isTest):
+
+        if isTest:
+            self.keysavePth = self.testpth 
 
         fname = str(time.strftime("%Y-%m-%d_%H%M%S",time.localtime()))
         
@@ -47,16 +54,17 @@ class CreateKeyTool(object):
         f = open(fpth,'w')
         f.write(outstr)
         f.close()
-
-        fpth = self.key1kapth + os.sep + fname + '.txt'
-        keys = json.loads(keystr)
-        outstr = ''
-        for k in keys:
-            outstr += k + ','
-        outstr = outstr[:-1]
-        f = open(fpth,'w')
-        f.write(outstr)
-        f.close()
+        
+        if not isTest:
+            fpth = self.key1kapth + os.sep + fname + '.txt'
+            keys = json.loads(keystr)
+            outstr = ''
+            for k in keys:
+                outstr += k + ','
+            outstr = outstr[:-1]
+            f = open(fpth,'w')
+            f.write(outstr)
+            f.close()
 
 
     #压缩
@@ -131,7 +139,7 @@ class CreateKeyTool(object):
         outstr = json.dumps(dat)
         res = self.postDataToURL('mycreate',outstr,isTest)
         keys = json.loads(res)
-        self.saveNewKeyToFile(keys)
+        self.saveNewKeyToFile(keys,isTest)
 
     def openKeyDir(self):
         if sysSystem == 'Windows':  

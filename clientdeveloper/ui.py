@@ -63,6 +63,8 @@ class WorkerThread(threading.Thread):
         self.window.downthread = None
 #https://www.youtube.com/watch?v=_kuRepI2D6A
 
+ISDEBUG = False
+
 class UITool ( wx.Frame ):
 
     def initClient(self):
@@ -98,11 +100,11 @@ class UITool ( wx.Frame ):
 
         try:
         # if True:
-            self.updateObj = updatetool.UpdateTool(isDebug = False)
+            self.updateObj = updatetool.UpdateTool(isDebug = ISDEBUG)
 
             # self.clientRegObj = clientRegTool.ClientRegTool(isDebug = True)
             clientRegTool = self.updateObj.getClientRegTool()
-            self.clientRegObj = clientRegTool.ClientRegTool(isDebug = False)
+            self.clientRegObj = clientRegTool.ClientRegTool(isDebug = ISDEBUG)
 
             self.downcount = self.clientRegObj.getDownCount()
             
