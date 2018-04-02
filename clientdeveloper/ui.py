@@ -94,7 +94,8 @@ class UITool ( wx.Frame ):
 
         self.isOKYoutube = False
 
-        try:
+        # try:
+        if True:
             self.updateObj = updatetool.UpdateTool(isDebug = False)
 
             # self.clientRegObj = clientRegTool.ClientRegTool(isDebug = True)
@@ -123,9 +124,9 @@ class UITool ( wx.Frame ):
 
             self.downtool.msgtool.setUIObj(self)
 
-        except Exception as e:
-            self.savePth = ''
-            self.isShowTrail = False
+        # except Exception as e:
+        #     self.savePth = ''
+        #     self.isShowTrail = False
 
         
 
