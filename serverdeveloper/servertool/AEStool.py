@@ -13,8 +13,8 @@ class prpcrypt():
     def __init__(self,key):
         self.key = key
         self.mode = AES.MODE_CBC
-        for i in self.key:
-            print(ord(i))
+        # for i in self.key:
+        #     print(ord(i))
     #加密函数，如果text不足16位就用空格补足为16位，
     #如果大于16当时不是16的倍数，那就补足为16的倍数。
     def encrypt(self,text):
