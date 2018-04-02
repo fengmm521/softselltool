@@ -225,7 +225,7 @@ class ClientRegTool(object):
         res = self.postDataToURL('trail',dat)
         bdic = json.loads(res)
         # print(bdic['erro'])
-        print(bdic['msg'])
+        # print(bdic['msg'])
         if len(bdic['code']) > 100:
             code = bdic['code']
             encode = base64.b64decode(code)
@@ -240,7 +240,7 @@ class ClientRegTool(object):
 
     def bind(self,regCodeID):
         if len(regCodeID) < 10:
-            print('注册码输入错误')
+            print('注册码输入错误'.decode())
             return
         harddic = self.getSystemMsg()
         harddic['regID'] = regCodeID
@@ -248,7 +248,7 @@ class ClientRegTool(object):
         res = self.postDataToURL('bind',dat)
         bdic = json.loads(res)
         # print(bdic['erro'])
-        print(bdic['msg'])
+        # print(bdic['msg'])
 
         if bdic['erro'] == 0:
             self.isTrail = False
@@ -270,8 +270,8 @@ class ClientRegTool(object):
         dat = json.dumps(harddic)
         res = self.postDataToURL('check',dat)
         bdic = json.loads(res)
-        print(bdic['erro'])
-        print(bdic['msg'])
+        # print(bdic['erro'])
+        # print(bdic['msg'])
         if bdic['erro'] == 1:
             code = bdic['code']
             encode = base64.b64decode(code)

@@ -64,14 +64,14 @@ class UpdateTool(object):
     def _decompress(self,dat):
         msg = zlib.decompress(dat)
         # print('ziplen-de-->',len(dat),len(msg))
-        print('正在解压数据...')
+        print('正在解压数据...'.decode())
         return msg
 
     def postDataToURL(self,purl,data):
         rurl = self.Host + purl
         cdata = self._compress(data)
         # print rurl
-        print('正在获取数据...')
+        print('正在获取数据...'.decode())
         response = requests.post(rurl,data=cdata,verify=False)
         dat = response.text
         if len(dat) > 0:
@@ -79,7 +79,7 @@ class UpdateTool(object):
             msg = self._decompress(dattmp)
             return msg
         else:
-            print('加载clientregtool错误')
+            print('加载clientregtool错误'.decode)
             return ''
 
     def saveCode(self,pcode):
