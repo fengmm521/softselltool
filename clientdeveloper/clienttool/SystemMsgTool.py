@@ -162,9 +162,9 @@ class SystemMsgObj(object):
             tmpmsg['UUID'] = mem.qualifiers['UUID'][1:-1]
             tmpmsg['BankLabel'] = mem.BankLabel
             tmpmsg['SerialNumber'] = mem.SerialNumber.strip()
-            tmpmsg['ConfiguredClockSpeed'] = mem.ConfiguredClockSpeed
+            # tmpmsg['ConfiguredClockSpeed'] = mem.ConfiguredClockSpeed
             tmpmsg['Capacity'] = mem.Capacity
-            tmpmsg['ConfiguredVoltage'] = mem.ConfiguredVoltage
+            # tmpmsg['ConfiguredVoltage'] = mem.ConfiguredVoltage
             memorys.append(tmpmsg)
         # for m in memorys:
         #     print m

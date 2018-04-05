@@ -97,9 +97,9 @@ class UITool ( wx.Frame ):
         self.isOKChina = False
 
         self.isOKYoutube = False
-
-        try:
-        # if True:
+        print('程序正在启动...\n请稍等...'.decode())
+        # try:
+        if True:
             self.updateObj = updatetool.UpdateTool(isDebug = ISDEBUG)
 
             # self.clientRegObj = clientRegTool.ClientRegTool(isDebug = True)
@@ -130,9 +130,9 @@ class UITool ( wx.Frame ):
 
             self.isWinSystem = self.downtool.isWinSystem
 
-        except Exception as e:
-            self.savePth = ''
-            self.isShowTrail = False
+        # except Exception as e:
+        #     self.savePth = ''
+        #     self.isShowTrail = False
 
         print(os.getcwd())
 
