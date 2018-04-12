@@ -258,7 +258,7 @@ class myHandler(BaseHTTPRequestHandler):
             regCode = hardKeysToolObj.getHardHeaveResCode(hardID)
             if regCode == None or (len(regCode) < 5 and count > UserDBTool.MAXTESTCOUNT):
                 backdic = {}
-                backdic['erro'] = 1
+                backdic['erro'] = 2
                 backdic['count'] = count            #使用硬件码+特殊字符串对试用代码进行AES加密
                 backdic['msg'] = '软件未注册可试用%d次'%(UserDBTool.MAXTESTCOUNT)
                 outstr = json.dumps(backdic)

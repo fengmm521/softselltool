@@ -57,8 +57,8 @@ class hardKeysTool(object):
     def getHardHeaveResCode(self,hardID):
         dat = self.getHardMsg(hardID)
         if dat and dat != None:
-            if 'reg' in dat:
-                return dat['reg']
+            if 'regID' in dat:
+                return dat['regID']
         return None
 
     #为一个硬件增加一次登陆次数,返回用户登陆次数

@@ -8,3 +8,4 @@ clientdeveloper/audio
 clientdeveloper/tmp
 clientdeveloper/data
 .DS_Store
+*.mp4

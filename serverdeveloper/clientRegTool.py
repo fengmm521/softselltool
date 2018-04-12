@@ -301,7 +301,7 @@ class ClientRegTool(object):
         # print(bdic['count'],'count')
         self.downcount = bdic['count']
         self.saveMsgToClientObj('downcount', bdic['count'])
-        return bdic['erro'],self.downcount
+        return bool(bdic['erro']),self.downcount
 
 
 
