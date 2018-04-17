@@ -1,6 +1,6 @@
-#softselltool
+# softselltool
 
-#注册版youtube视频下载工具
+# 注册版youtube视频下载工具
 
 使用易卡支付接口，自架注册码生成验证服务器，使用https接口
 
@@ -25,5 +25,6 @@
 试用版采用服务器端获取下载接口方式，每个客户端可试用3次。3次使用完将强行弹出支持窗口
 
 软件下载地址：
+
 链接: https://pan.baidu.com/s/1fc8mK2Hh4l7hoh_MSGYHBA 密码: 8iey
 
